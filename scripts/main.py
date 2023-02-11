@@ -33,10 +33,12 @@ def ingest_data(csv_url):
 
 
 def quartiles(arr):
+    # using quantile function of numpy to get the first, second (median) and third quartile
     return np.quantile(arr, 0.25), np.quantile(arr, 0.5), np.quantile(arr, 0.75)
 
 
 def summary_statistic(arr, predictor):
+    # getting mean, median, max and quantiles of predictors
     print(f"mean {predictor} = {np.mean(arr)}")
     print(f"min {predictor} = {np.min(arr)}")
     print(f"max {predictor} = {np.max(arr)}")
@@ -167,22 +169,36 @@ def make_mean_of_response_plots(predictor, species, iris):
     }
 
     iris_predictor_species = iris[[predictor, "class"]]
+
+    # creating the array of predictors for the overall population i.e., all three species
     a = np.array(iris_predictor_species[predictor])
+
+    # using np.histogram function to get the bins and population in each bin (for bar plot)
     population, bins = np.histogram(a, bins=10, range=(np.min(a), np.max(a)))
+
+    # taking the average of bins to get the midpoints
     bins_mod = 0.5 * (bins[:-1] + bins[1:])
 
+    # getting the predictor values for a specific class
     iris_predictor_subgroup = iris_predictor_species.loc[
         iris_predictor_species["class"] == species
     ]
+    # creating the array of predictor values for a specific class
     b = np.array(iris_predictor_subgroup[predictor])
     population_iris_class, _ = np.histogram(b, bins=bins)
 
+    # getting the response value range is [0,1]
     population_response = population_iris_class / population
+
+    # overall class mean response value; it is 0.33 as we have around 50 records for each class
     species_class_response_rate = len(iris.loc[iris["class"] == species]) / len(iris)
+
+    # creating the array of class mean response to build the plot
     species_class_response_rate_arr = np.array(
         [species_class_response_rate] * len(bins_mod)
     )
 
+    # bar plot for overall population
     fig = go.Figure(
         data=go.Bar(
             x=bins_mod,
@@ -192,6 +208,7 @@ def make_mean_of_response_plots(predictor, species, iris):
         )
     )
 
+    # scatter plot for mean of response for a class within each bin
     fig.add_trace(
         go.Scatter(
             x=bins_mod,
@@ -202,6 +219,7 @@ def make_mean_of_response_plots(predictor, species, iris):
         )
     )
 
+    # scatter plot for mean of response for the class in entire population
     fig.add_trace(
         go.Scatter(
             x=bins_mod,
@@ -251,12 +269,16 @@ def make_mean_of_response_plots(predictor, species, iris):
 
 
 def main():
+
     csv_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
     df = ingest_data(csv_url)
+
     sepal_length_arr = np.array(df["sepal_len"])
     sepal_width_arr = np.array(df["sepal_wid"])
     petal_length_arr = np.array(df["petal_len"])
     petal_width_arr = np.array(df["petal_wid"])
+
+    # calling functions for summary statistic
     summary_statistic(sepal_length_arr, "Sepal Length")
     summary_statistic(sepal_width_arr, "Sepal Width")
     summary_statistic(petal_length_arr, "Petal Length")
@@ -269,7 +291,6 @@ def main():
     machine_learning_pipelines(df)
 
     # Create mean of response plots
-
     predictors = ["sepal_len", "sepal_wid", "petal_len", "petal_wid"]
     species = ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
 
