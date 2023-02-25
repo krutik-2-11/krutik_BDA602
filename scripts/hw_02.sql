@@ -1,30 +1,44 @@
-DROP TABLE IF EXISTS batter_batting_average;
+DROP TABLE IF EXISTS im_batter_batting_average;
 
-CREATE TABLE batter_batting_average AS
+-- Creating intermediate batting table
+CREATE TABLE im_batter_batting_average AS
 SELECT bc.game_id AS game_id, bc.batter AS batter, bc.atbat AS atbat, bc.hit AS hit, g.local_date AS local_date, g.et_date AS et_date
 FROM batter_counts bc
     INNER JOIN game g ON bc.game_id = g.game_id
 ORDER BY local_date
 ;
 
--- Historical Batting Average for batters
-SELECT bba.batter, SUM(bba.hit) / SUM(bba.atbat) AS bat_Avg
-FROM batter_batting_average bba
-GROUP BY bba.batter
+-- Creating index for quick joins
+CREATE INDEX idx_batter ON im_batter_batting_average(batter);
+CREATE INDEX idx_date ON im_batter_batting_average(local_date);
+
+
+DROP TABLE IF EXISTS fl_historical_batting_average;
+-- Final Historical Batting Average for batters
+CREATE TABLE fl_historical_batting_average AS
+SELECT ibba.batter, COALESCE(SUM(ibba.hit) / NULLIF(SUM(ibba.atbat), 0), 0) AS bat_Avg
+FROM im_batter_batting_average ibba
+GROUP BY ibba.batter
 ;
+
+
+DROP TABLE IF EXISTS fl_annual_batting_average;
 -- Annual Batting Average for batters
-SELECT bba.batter, SUM(bba.hit) / SUM(bba.atbat) AS bat_Avg, YEAR(bba.local_date) AS game_year
-FROM batter_batting_average bba
-GROUP BY bba.batter, YEAR(bba.local_date)
+CREATE TABLE fl_annual_batting_average AS
+SELECT ibba.batter, COALESCE(SUM(ibba.hit) / NULLIF(SUM(ibba.atbat), 0), 0) AS bat_Avg, YEAR(ibba.local_date) AS game_year
+FROM im_batter_batting_average ibba
+GROUP BY ibba.batter, YEAR(ibba.local_date)
 ;
--- Replacing Null values with Zeros and addition of Index WIP
+
+
+DROP TABLE IF EXISTS fl_rolling_batting_average;
 -- Rolling Batting Average for a Specific Batter
-SELECT bba1.batter, bba1.hit, bba1.atbat, SUM(bba2.hit) / SUM(bba2.atbat) AS batting_average, DATE(bba1.local_date) AS local_date1, DATE(bba2.local_date) AS local_date2, DATEDIFF(DATE(bba1.local_date), DATE(bba2.local_date)) AS date_diff
-FROM batter_batting_average bba1
-    LEFT JOIN batter_batting_average bba2
+CREATE TABLE fl_rolling_batting_average AS
+SELECT ibba1.batter, ibba1.hit, ibba1.atbat, COALESCE(SUM(ibba2.hit) / NULLIF(SUM(ibba2.atbat), 0), 0) AS bat_Avg, DATE(ibba1.local_date) AS game_date
+FROM im_batter_batting_average ibba1
+    LEFT JOIN im_batter_batting_average ibba2
         ON
-            (DATEDIFF(DATE(bba1.local_date), DATE(bba2.local_date)) <= 100) AND (DATEDIFF(DATE(bba1.local_date), DATE(bba2.local_date)) > 0) AND (bba1.batter = bba2.batter)
-WHERE bba1.batter = 407832
-GROUP BY DATE(bba1.local_date)
-ORDER BY DATE(bba1.local_date), date_diff DESC
+            (((DATEDIFF(DATE(ibba1.local_date), DATE(ibba2.local_date)) <= 100) AND (DATEDIFF(DATE(ibba1.local_date), DATE(ibba2.local_date)) > 0)) AND (ibba1.batter = ibba2.batter))
+GROUP BY ibba1.batter, DATE(ibba1.local_date)
+ORDER BY ibba1.batter, DATE(ibba1.local_date)
 ;
