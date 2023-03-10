@@ -30,7 +30,7 @@ class RollingAverageTransformer(Transformer):
         spark_100days_rolling_average = spark.sql(
             """
             SELECT ibba1.batter,
-            COALESCE(SUM(ibba2.hit) / NULLIF(SUM(ibba2.atbat), 0), 0) AS bat_avg,
+            ROUND(COALESCE(SUM(ibba2.hit) / NULLIF(SUM(ibba2.atbat), 0), 0),4) AS bat_avg,
             DATE(ibba1.local_date) AS game_date
             FROM spark_intermediate_batting_average ibba1
             LEFT JOIN spark_intermediate_batting_average ibba2
