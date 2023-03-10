@@ -13,15 +13,10 @@ port = 3306
 jdbc_driver = "org.mariadb.jdbc.Driver"
 jdbc_url = f"jdbc:mysql://{server}:{port}/{database}?permitMysqlScheme"
 
-# Creating the spark session
-spark = SparkSession.builder.appName(
-    "Python Spark and Mariadb Connection"
-).getOrCreate()
-
 
 # Rolling batting average Transformer class
 class RollingAverageTransformer(Transformer):
-    def _transform(self, df_intermediate_batting_avg):
+    def _transform(self, spark, df_intermediate_batting_avg):
         """
         This function uses spark dataframe as input, performs the transformation and returns the results of the query
         as spark dataframe.
@@ -52,9 +47,10 @@ class RollingAverageTransformer(Transformer):
         return spark_100days_rolling_average
 
 
-def fetch_mariadb_data(sql, user, password):
+def fetch_mariadb_data(spark, sql, user, password):
     """
     Function takes Database credentials and SQL query and returns the spark dataframe of the output
+    :param spark: spark session
     :param sql: string
     :param user: string
     :param password: string
@@ -73,10 +69,11 @@ def fetch_mariadb_data(sql, user, password):
     return df
 
 
-def get_intermediate_table(df_batter_counts, df_game):
+def get_intermediate_table(spark, df_batter_counts, df_game):
     """
     Function takes spark dataframes, makes their temp view and runs the SQL on spark to create intermediate temp table.
     Returns the results in the form of spark dataframe.
+    :param spark: spark session
     :param df_batter_counts:
     :param df_game:
     :return: df_intermediate_batting_avg:
@@ -105,50 +102,53 @@ def get_intermediate_table(df_batter_counts, df_game):
 
 
 def main():
-
     # Mariadb Username and Password taking input during runtime
     user = input("Enter Mariadb Username: ")
     password = input("Enter Mariadb Password: ")
 
     try:
+        # Creating the spark session
+        spark = SparkSession.builder.appName(
+            "Python Spark and Mariadb Connection"
+        ).getOrCreate()
+
         # Getting mariadb table batter_counts into spark dataframe
         sql_batter_counts = "SELECT * FROM batter_counts"
-        df_batter_counts = fetch_mariadb_data(sql_batter_counts, user, password)
+        df_batter_counts = fetch_mariadb_data(spark, sql_batter_counts, user, password)
 
         # Getting mariadb table game into spark dataframe
         sql_game = "SELECT * FROM game"
-        df_game = fetch_mariadb_data(sql_game, user, password)
-
-        # Getting the intermediate table by joining batter_counts and game table in spark
-        df_intermediate_batting_avg = get_intermediate_table(df_batter_counts, df_game)
-
-        rolling_100_days_avg_table = "spark_rolling_100_days_avg"
-
-        # Calculating 100 days rolling batting average in spark transformer
-        rolling_avg_transformer = RollingAverageTransformer()
-        df_rolling_100_days_avg = rolling_avg_transformer.transform(
-            df_intermediate_batting_avg
-        )
-
-        # Creating the temp view for 100 days rolling batting average results
-        df_rolling_100_days_avg.createOrReplaceTempView(rolling_100_days_avg_table)
-        df_rolling_100_days_avg.persist(StorageLevel.DISK_ONLY)
-
-        # Displaying the final results for one batter 110029. Please change the query to test for other batters
-        results = spark.sql(
-            """
-                SELECT batter, bat_avg, game_date FROM spark_rolling_100_days_avg
-                WHERE batter = 110029
-            """
-        )
-
-        results.show()
+        df_game = fetch_mariadb_data(spark, sql_game, user, password)
 
     except Exception as e:
-        print(f"Error connecting to MariaDB: {e}")
+        print(f"Error in fetching data from mariadb: {e}")
 
-    finally:
-        spark.stop()
+    # Getting the intermediate table by joining batter_counts and game table in spark
+    df_intermediate_batting_avg = get_intermediate_table(
+        spark, df_batter_counts, df_game
+    )
+
+    rolling_100_days_avg_table = "spark_rolling_100_days_avg"
+
+    # Calculating 100 days rolling batting average in spark transformer
+    rolling_avg_transformer = RollingAverageTransformer()
+    df_rolling_100_days_avg = rolling_avg_transformer._transform(
+        spark, df_intermediate_batting_avg
+    )
+
+    # Creating the temp view for 100 days rolling batting average results
+    df_rolling_100_days_avg.createOrReplaceTempView(rolling_100_days_avg_table)
+    df_rolling_100_days_avg.persist(StorageLevel.DISK_ONLY)
+
+    # Displaying the final results for one batter 110029. Please change the query to test for other batters
+    results = spark.sql(
+        """
+            SELECT batter, bat_avg, game_date FROM spark_rolling_100_days_avg
+            WHERE batter = 110029
+        """
+    )
+
+    results.show()
 
 
 if __name__ == "__main__":
