@@ -16,13 +16,15 @@ jdbc_url = f"jdbc:mysql://{server}:{port}/{database}?permitMysqlScheme"
 
 # Rolling batting average Transformer class
 class RollingAverageTransformer(Transformer):
-    def _transform(self, spark, df_intermediate_batting_avg):
+    def _transform(self, df_intermediate_batting_avg):
         """
         This function uses spark dataframe as input, performs the transformation and returns the results of the query
         as spark dataframe.
         :param df_intermediate_batting_avg: spark dataframe
         :return: spark_100days_rolling_average: spark dataframe
         """
+        # Getting the spark session corresponding to the dataframe
+        spark = df_intermediate_batting_avg.sparkSession
         df_intermediate_batting_avg.createOrReplaceTempView(
             "spark_intermediate_batting_average"
         )
@@ -132,8 +134,8 @@ def main():
 
     # Calculating 100 days rolling batting average in spark transformer
     rolling_avg_transformer = RollingAverageTransformer()
-    df_rolling_100_days_avg = rolling_avg_transformer._transform(
-        spark, df_intermediate_batting_avg
+    df_rolling_100_days_avg = rolling_avg_transformer.transform(
+        df_intermediate_batting_avg
     )
 
     # Creating the temp view for 100 days rolling batting average results
