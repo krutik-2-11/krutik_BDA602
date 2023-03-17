@@ -2,6 +2,8 @@ import os
 import sys
 
 import numpy
+import pandas as pd
+import statsmodels.api
 from data_loader import TestDatasets
 from plotly import express as px
 from plotly import figure_factory as ff
@@ -161,7 +163,7 @@ def return_column_type(column, predictor_response):
             return "boolean"
 
     elif predictor_response == "predictor":
-        if column.dtype == "object":
+        if column.dtype in ["object", "bool"]:
             return "categorical"
         else:
             return "continuous"
@@ -175,6 +177,68 @@ def create_resp_pred_plot_folder(dataset):
     if not os.path.exists(path):
         os.mkdir(path)
     return path
+
+
+def create_linear_regression(df, predictor, response):
+    summary_dict = {}
+    # numpy array for predictor column
+    X = df[predictor]
+
+    # numpy array for response column
+    y = df[response]
+
+    feature_name = predictor
+    predict = statsmodels.api.add_constant(X)
+    linear_regression_model = statsmodels.api.OLS(y, predict)
+    linear_regression_model_fitted = linear_regression_model.fit()
+    print(f"Variable: {feature_name}")
+    # print(linear_regression_model_fitted.summary())
+
+    # Get the stats
+    t_value = round(linear_regression_model_fitted.tvalues[1], 6)
+    p_value = "{:.6e}".format(linear_regression_model_fitted.pvalues[1])
+
+    print(f"p_value = {p_value}")
+    print(f"t_score = {t_value}")
+
+    summary_dict["predictor"] = predictor
+    summary_dict["p_value"] = p_value
+    summary_dict["t_value"] = t_value
+
+    print(summary_dict)
+
+    return summary_dict
+
+
+def create_logistic_regression(df, predictor, response):
+    summary_dict = {}
+
+    # numpy array for predictor column
+    X = df[predictor]
+
+    # numpy array for response column
+    y = df[response]
+
+    feature_name = predictor
+    predict = statsmodels.api.add_constant(X)
+    logistic_regression_model = statsmodels.api.Logit(y, predict)
+    logistic_regression_model_fitted = logistic_regression_model.fit()
+    print(f"Variable: {feature_name}")
+    # print(logistic_regression_model_fitted.summary())
+
+    # Get the stats
+    t_value = round(logistic_regression_model_fitted.tvalues[1], 6)
+    p_value = "{:.6e}".format(logistic_regression_model_fitted.pvalues[1])
+
+    print(f"p_value = {p_value}")
+    print(f"t_score = {t_value}")
+
+    summary_dict["predictor"] = predictor
+    summary_dict["p_value"] = p_value
+    summary_dict["t_value"] = t_value
+
+    print(summary_dict)
+    return summary_dict
 
 
 def main():
@@ -197,16 +261,34 @@ def main():
 
     path = create_resp_pred_plot_folder(dataset)
     response_type = return_column_type(df[response], "response")
+
+    lst_summary_statistics = []
+
     for predictor in predictors:
         predictor_type = return_column_type(df[predictor], "predictor")
-        if response_type == "boolean" and predictor_type == "categorical":
-            cat_response_cat_predictor(df, predictor, response, path)
-        elif response_type == "boolean" and predictor_type == "continuous":
-            cat_resp_cont_predictor(df, predictor, response, path)
-        elif response_type == "continuous" and predictor_type == "categorical":
-            cont_resp_cat_predictor(df, predictor, response, path)
-        elif response_type == "continuous" and predictor_type == "continuous":
-            cont_response_cont_predictor(df, predictor, response, path)
+
+        if response_type == "boolean":
+            if predictor_type == "categorical":
+                cat_response_cat_predictor(df, predictor, response, path)
+            elif predictor_type == "continuous":
+                cat_resp_cont_predictor(df, predictor, response, path)
+                lst_summary_statistics.append(
+                    create_logistic_regression(df, predictor, response)
+                )
+
+        elif response_type == "continuous":
+            if predictor_type == "categorical":
+                cont_resp_cat_predictor(df, predictor, response, path)
+            elif predictor_type == "continuous":
+                cont_response_cont_predictor(df, predictor, response, path)
+                lst_summary_statistics.append(
+                    create_linear_regression(df, predictor, response)
+                )
+
+    df_summary_statistics = pd.DataFrame(
+        lst_summary_statistics, columns=["predictor", "p_value", "t_value"]
+    )
+    print(df_summary_statistics)
 
 
 if __name__ == "__main__":
