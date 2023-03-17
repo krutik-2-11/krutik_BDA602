@@ -18,7 +18,7 @@ def cont_resp_cat_predictor(df, predictor, response, path):
     for label in group_labels:
         hist_data.append(numpy.array(df[df[predictor] == label][response]))
 
-    # Create distribution plot with custom bin_size
+    # Create distribution plot
     fig_1 = ff.create_distplot(hist_data, group_labels)
     fig_1.update_layout(
         title=f"Continuous Response {response} by Categorical Predictor {predictor}",
@@ -65,7 +65,7 @@ def cat_resp_cont_predictor(df, predictor, response, path):
     for label in group_labels:
         hist_data.append(numpy.array(df[df[response].astype(str) == label][predictor]))
 
-    # Create distribution plot with custom bin_size
+    # Create distribution plot
     fig_1 = ff.create_distplot(hist_data, group_labels)
     fig_1.update_layout(
         title=f"Continuous Response {response} by Categorical Predictor {predictor}",
@@ -121,14 +121,12 @@ def cat_response_cat_predictor(df, predictor, response, path):
         yaxis=dict(title=response),
     )
 
-    # Create the figure and add the trace
     fig = go.Figure(data=[heatmap], layout=layout)
 
-    # Show the plot
     # fig.show()
 
     fig.write_html(
-        file=f"{path}/cat_response_{response}_cat_predictor_{predictor}_violin_plot.html",
+        file=f"{path}/cat_response_{response}_cat_predictor_{predictor}_heat_plot.html",
         include_plotlyjs="cdn",
     )
 
