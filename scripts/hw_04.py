@@ -1,125 +1,17 @@
-import random
+import os
 import sys
-from typing import List, Tuple
 
 import numpy
-import pandas
-import seaborn
+from data_loader import TestDatasets
 from plotly import express as px
 from plotly import figure_factory as ff
 from plotly import graph_objects as go
-from sklearn import datasets
+
+PATH_RESP_PRED = "response_predictor_plots"
+PATH_REGRESSION = "regression_plots"
 
 
-class TestDatasets:
-    def __init__(self):
-        self.seaborn_data_sets = ["mpg", "tips", "titanic"]
-        self.sklearn_data_sets = ["diabetes", "breast_cancer"]
-        self.all_data_sets = self.seaborn_data_sets + self.sklearn_data_sets
-
-    TITANIC_PREDICTORS = [
-        "pclass",
-        "sex",
-        "age",
-        "sibsp",
-        "embarked",
-        "parch",
-        "fare",
-        "who",
-        "adult_male",
-        "deck",
-        "embark_town",
-        "alone",
-        "class",
-    ]
-
-    def get_all_available_datasets(self) -> List[str]:
-        return self.all_data_sets
-
-    def get_test_data_set(
-        self, data_set_name: str = None
-    ) -> Tuple[pandas.DataFrame, List[str], str]:
-        """Function to load a few test data sets
-
-        :param:
-        data_set_name : string, optional
-            Data set to load
-
-        :return:
-        data_set : :class:`pandas.DataFrame`
-            Tabular data, possibly with some preprocessing applied.
-        predictors :list[str]
-            List of predictor variables
-        response: str
-            Response variable
-        """
-
-        if data_set_name is None:
-            data_set_name = random.choice(self.all_data_sets)
-        else:
-            if data_set_name not in self.all_data_sets:
-                raise Exception(f"Data set choice not valid: {data_set_name}")
-
-        if data_set_name in self.seaborn_data_sets:
-            if data_set_name == "mpg":
-                data_set = seaborn.load_dataset(name="mpg").dropna().reset_index()
-                predictors = [
-                    "cylinders",
-                    "displacement",
-                    "horsepower",
-                    "weight",
-                    "acceleration",
-                    "origin",
-                ]
-                response = "mpg"
-            elif data_set_name == "tips":
-                data_set = seaborn.load_dataset(name="tips").dropna().reset_index()
-                predictors = [
-                    "total_bill",
-                    "sex",
-                    "smoker",
-                    "day",
-                    "time",
-                    "size",
-                ]
-                response = "tip"
-            elif data_set_name in ["titanic", "titanic_2"]:
-                data_set = seaborn.load_dataset(name="titanic").dropna()
-                data_set["alone"] = data_set["alone"].astype(str)
-                data_set["class"] = data_set["class"].astype(str)
-                data_set["deck"] = data_set["deck"].astype(str)
-                data_set["pclass"] = data_set["pclass"].astype(str)
-                predictors = self.TITANIC_PREDICTORS
-                if data_set_name == "titanic":
-                    response = "survived"
-                elif data_set_name == "titanic_2":
-                    response = "alive"
-        elif data_set_name in self.sklearn_data_sets:
-            if data_set_name == "boston":
-                data = datasets.load_boston()
-                data_set = pandas.DataFrame(data.data, columns=data.feature_names)
-                data_set["CHAS"] = data_set["CHAS"].astype(str)
-            elif data_set_name == "diabetes":
-                data = datasets.load_diabetes()
-                data_set = pandas.DataFrame(data.data, columns=data.feature_names)
-            elif data_set_name == "breast_cancer":
-                data = datasets.load_breast_cancer()
-                data_set = pandas.DataFrame(data.data, columns=data.feature_names)
-            data_set["target"] = data.target
-            predictors = data.feature_names
-            response = "target"
-
-        # Change category dtype to string
-        for predictor in predictors:
-            if data_set[predictor].dtype in ["category"]:
-                data_set[predictor] = data_set[predictor].astype(str)
-
-        print(f"Data set selected: {data_set_name}")
-        data_set.reset_index(drop=True, inplace=True)
-        return data_set, predictors, response
-
-
-def cont_resp_cat_predictor(df, predictor, response):
+def cont_resp_cat_predictor(df, predictor, response, path):
     group_labels = df[predictor].unique()
     hist_data = []
 
@@ -136,7 +28,7 @@ def cont_resp_cat_predictor(df, predictor, response):
     # fig_1.show()
 
     fig_1.write_html(
-        file=f"../plots/lecture_6_cont_response_{response}_cat_predictor_{predictor}_dist_plot.html",
+        file=f"{path}/cont_response_{response}_cat_predictor_{predictor}_dist_plot.html",
         include_plotlyjs="cdn",
     )
 
@@ -159,14 +51,14 @@ def cont_resp_cat_predictor(df, predictor, response):
     # fig_2.show()
 
     fig_2.write_html(
-        file=f"../plots/lecture_6_cont_response_{response}_cat_predictor_{predictor}_violin_plot.html",
+        file=f"{path}/cont_response_{response}_cat_predictor_{predictor}_violin_plot.html",
         include_plotlyjs="cdn",
     )
 
     return
 
 
-def cat_resp_cont_predictor(df, predictor, response):
+def cat_resp_cont_predictor(df, predictor, response, path):
     group_labels = df[response].unique().astype(str)
     hist_data = []
 
@@ -183,7 +75,7 @@ def cat_resp_cont_predictor(df, predictor, response):
     # fig_1.show()
 
     fig_1.write_html(
-        file=f"../plots/lecture_6_cont_response_{response}_cat_predictor_{predictor}_dist_plot.html",
+        file=f"{path}/cont_response_{response}_cat_predictor_{predictor}_dist_plot.html",
         include_plotlyjs="cdn",
     )
 
@@ -206,14 +98,14 @@ def cat_resp_cont_predictor(df, predictor, response):
     # fig_2.show()
 
     fig_2.write_html(
-        file=f"../plots/lecture_6_cont_response_{response}_cat_predictor_{predictor}_violin_plot.html",
+        file=f"{path}/cont_response_{response}_cat_predictor_{predictor}_violin_plot.html",
         include_plotlyjs="cdn",
     )
 
     return
 
 
-def cat_response_cat_predictor(df, predictor, response):
+def cat_response_cat_predictor(df, predictor, response, path):
     # Pivot the data set to create a frequency table
     pivoted_data = df.pivot_table(index=response, columns=predictor, aggfunc="size")
 
@@ -236,14 +128,14 @@ def cat_response_cat_predictor(df, predictor, response):
     # fig.show()
 
     fig.write_html(
-        file=f"../plots/lecture_6_cat_response_{response}_cat_predictor_{predictor}_violin_plot.html",
+        file=f"{path}/cat_response_{response}_cat_predictor_{predictor}_violin_plot.html",
         include_plotlyjs="cdn",
     )
 
     return
 
 
-def cont_response_cont_predictor(df, predictor, response):
+def cont_response_cont_predictor(df, predictor, response, path):
     x = df[predictor]
     y = df[response]
 
@@ -256,7 +148,7 @@ def cont_response_cont_predictor(df, predictor, response):
     # fig.show()
 
     fig.write_html(
-        file=f"../plots/lecture_6_cont_response_{response}_cont_predictor_{predictor}_scatter_plot.html",
+        file=f"{path}/cont_response_{response}_cont_predictor_{predictor}_scatter_plot.html",
         include_plotlyjs="cdn",
     )
 
@@ -277,6 +169,16 @@ def return_column_type(column, predictor_response):
             return "continuous"
 
 
+def create_resp_pred_plot_folder(dataset):
+    path = f"../{PATH_RESP_PRED}"
+    if not os.path.exists(path):
+        os.mkdir(path)
+    path = f"{path}/{dataset}"
+    if not os.path.exists(path):
+        os.mkdir(path)
+    return path
+
+
 def main():
     test_datasets = TestDatasets()
     dataset_dict = {}
@@ -284,21 +186,29 @@ def main():
         df, predictors, response = test_datasets.get_test_data_set(data_set_name=test)
         dataset_dict[test] = [df, predictors, response]
 
-    df = dataset_dict["titanic"][0]
-    predictors = dataset_dict["titanic"][1]
-    response = dataset_dict["titanic"][2]
+    dataset_list = list(dataset_dict.keys())
+    print("Available Datasets: ")
+    for dataset in dataset_list:
+        print(dataset)
 
+    dataset = input("Enter your dataset: ").strip().lower()
+
+    df = dataset_dict[dataset][0]
+    predictors = dataset_dict[dataset][1]
+    response = dataset_dict[dataset][2]
+
+    path = create_resp_pred_plot_folder(dataset)
     response_type = return_column_type(df[response], "response")
     for predictor in predictors:
         predictor_type = return_column_type(df[predictor], "predictor")
         if response_type == "boolean" and predictor_type == "categorical":
-            cat_response_cat_predictor(df, predictor, response)
+            cat_response_cat_predictor(df, predictor, response, path)
         elif response_type == "boolean" and predictor_type == "continuous":
-            cat_resp_cont_predictor(df, predictor, response)
+            cat_resp_cont_predictor(df, predictor, response, path)
         elif response_type == "continuous" and predictor_type == "categorical":
-            cont_resp_cat_predictor(df, predictor, response)
+            cont_resp_cat_predictor(df, predictor, response, path)
         elif response_type == "continuous" and predictor_type == "continuous":
-            cont_response_cont_predictor(df, predictor, response)
+            cont_response_cont_predictor(df, predictor, response, path)
 
 
 if __name__ == "__main__":
