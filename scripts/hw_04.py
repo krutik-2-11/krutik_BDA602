@@ -8,6 +8,7 @@ from data_loader import TestDatasets
 from plotly import express as px
 from plotly import figure_factory as ff
 from plotly import graph_objects as go
+from sklearn.ensemble import RandomForestRegressor
 
 """
 A lot of source code has been used from Dr. Julien's lecture materials. This includes:
@@ -21,6 +22,8 @@ https://teaching.mrsharky.com/sdsu_fall_2020_lecture07.html#/4/4
 https://teaching.mrsharky.com/sdsu_fall_2020_lecture07.html#/4/5
 https://teaching.mrsharky.com/sdsu_fall_2020_lecture07.html#/5/1
 
+Feature Importance with Random Forest Regressor
+https://towardsdatascience.com/random-forest-for-feature-importance-ea90852b8fc5
 """
 
 PATH_RESP_PRED = "response_predictor_plots"
@@ -248,6 +251,31 @@ def create_logistic_regression(df, predictor, response):
     summary_dict["t_value"] = t_value
 
     return summary_dict
+
+
+def random_forest_variable_importance_ranking(df, continuous_predictors, response):
+
+    X = df[continuous_predictors]
+    y = df[response]
+
+    # create a random forest regressor
+    rf = RandomForestRegressor(random_state=42)
+
+    # Fit the model into the data
+    rf.fit(X, y)
+
+    importances = rf.feature_importances_
+
+    feature_importances = pd.DataFrame(
+        {"predictor": continuous_predictors, "importance": importances}
+    )
+
+    # Sort the dataframe by feature importance in descending order
+    feature_importances = feature_importances.sort_values(
+        "importance", ascending=False
+    ).reset_index(drop=True)
+
+    return feature_importances
 
 
 # Mean of response plot for continuous predictor & categorical response
@@ -700,9 +728,10 @@ def main():
     lst_summary_statistics_p_t_value = []
     lst_summary_statistics_mean_of_response = []
 
+    continuous_predictors = []
     for predictor in predictors:
-        predictor_type = return_column_type(df[predictor], "predictor")
 
+        predictor_type = return_column_type(df[predictor], "predictor")
         if response_type == "boolean":
             if predictor_type == "categorical":
                 cat_response_cat_predictor(df, predictor, response, path)
@@ -713,6 +742,7 @@ def main():
                 )
 
             elif predictor_type == "continuous":
+                continuous_predictors.append(predictor)
                 cat_resp_cont_predictor(df, predictor, response, path)
                 lst_summary_statistics_p_t_value.append(
                     create_logistic_regression(df, predictor, response)
@@ -734,6 +764,7 @@ def main():
                 )
 
             elif predictor_type == "continuous":
+                continuous_predictors.append(predictor)
                 cont_response_cont_predictor(df, predictor, response, path)
                 lst_summary_statistics_p_t_value.append(
                     create_linear_regression(df, predictor, response)
@@ -743,6 +774,10 @@ def main():
                         df, predictor, response, path_mean_of_response
                     )
                 )
+
+    df_random_forest_variable_importance = random_forest_variable_importance_ranking(
+        df, continuous_predictors, response
+    )
 
     df_summary_statistics_p_t_value = pd.DataFrame(
         lst_summary_statistics_p_t_value, columns=["predictor", "p_value", "t_value"]
@@ -776,6 +811,13 @@ def main():
         f"****************Summary Statistics of Mean of Response of dataset {dataset}**********************"
     )
     print(df_summary_statistics_mean_of_response)
+    print("*" * 50)
+
+    print("*" * 50)
+    print(
+        f"****************Random Forest Variable importance of dataset {dataset}**********************"
+    )
+    print(df_random_forest_variable_importance)
     print("*" * 50)
 
 
