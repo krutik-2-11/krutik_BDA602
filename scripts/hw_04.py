@@ -388,6 +388,7 @@ def mean_of_response_cont_pred_cat_resp(df, predictor, response, path):
         file=f"{path}/{response}_VS_{predictor}_MOR.html",
         include_plotlyjs="cdn",
     )
+
     summary_dict = {}
     summary_dict["predictor"] = predictor
     summary_dict["mean_squared_diff"] = mean_squared_diff
@@ -703,6 +704,17 @@ def mean_of_response_cat_pred_cont_resp(df, predictor, response, path):
     return summary_dict
 
 
+def save_dataframe_to_HTML(df, caption):
+    html_table = df.to_html()
+
+    # Manually add a table title to the HTML code
+    html_table = f"<caption><center><b>{caption}<b><center></caption>" + html_table
+
+    # Save the HTML table string to a file
+    with open("my_table.html", "a") as f:
+        f.write(html_table)
+
+
 def main():
     test_datasets = TestDatasets()
     dataset_dict = {}
@@ -729,6 +741,7 @@ def main():
     lst_summary_statistics_mean_of_response = []
 
     continuous_predictors = []
+
     for predictor in predictors:
 
         predictor_type = return_column_type(df[predictor], "predictor")
@@ -787,10 +800,11 @@ def main():
     df_summary_statistics_p_t_value.sort_values(
         by=["t_value", "p_value"], ascending=[False, True], inplace=True
     )
+
     print("*" * 50)
-    print(
-        f"****************Summary Statistics of Continuous Predictors of dataset {dataset}**********************"
-    )
+    caption = f"Summary Statistics of Continuous Predictors of dataset {dataset}"
+    save_dataframe_to_HTML(df_summary_statistics_p_t_value, caption)
+    print(caption)
     print(df_summary_statistics_p_t_value)
     print("*" * 50)
 
@@ -807,16 +821,16 @@ def main():
     )
 
     print("*" * 50)
-    print(
-        f"****************Summary Statistics of Mean of Response of dataset {dataset}**********************"
-    )
+    caption = f"Summary Statistics of Mean of Response of dataset {dataset}"
+    save_dataframe_to_HTML(df_summary_statistics_mean_of_response, caption)
+    print(caption)
     print(df_summary_statistics_mean_of_response)
     print("*" * 50)
 
     print("*" * 50)
-    print(
-        f"****************Random Forest Variable importance of dataset {dataset}**********************"
-    )
+    caption = f"Random Forest Variable importance of dataset {dataset}"
+    save_dataframe_to_HTML(df_random_forest_variable_importance, caption)
+    print(caption)
     print(df_random_forest_variable_importance)
     print("*" * 50)
 
