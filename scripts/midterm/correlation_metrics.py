@@ -125,9 +125,7 @@ class CorrelationMetrics:
             eta = np.sqrt(numerator / denominator)
         return eta
 
-    def corr_heatmap_plots(
-        self, df, pred_1, type1, pred_2, type2, caption, corr_coeff_value
-    ):
+    def corr_heatmap_plots(self, df, pred_1, pred_2, caption, corr_coeff_value):
 
         data = [
             go.Heatmap(
@@ -141,7 +139,7 @@ class CorrelationMetrics:
         ]
         layout = go.Layout(
             {
-                "title": f"{type1} vs {type2} {caption} Correlation Heatmap",
+                "title": f"Correlation {caption} Matrix",
             }
         )
 

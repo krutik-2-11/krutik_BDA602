@@ -5,7 +5,7 @@ from plotly import graph_objects as go
 
 
 class PredictorVsResponsePlots:
-    def cont_resp_cat_predictor(self, df, predictor, response, path):
+    def cont_response_cat_predictor(self, df, predictor, response, path):
         group_labels = df[predictor].unique()
         hist_data = []
 
@@ -53,7 +53,7 @@ class PredictorVsResponsePlots:
         summary_dict = {"predictor": predictor, "plot_link": plot_link}
         return summary_dict
 
-    def cat_resp_cont_predictor(self, df, predictor, response, path):
+    def cat_response_cont_predictor(self, df, predictor, response, path):
         group_labels = df[response].unique().astype(str)
         hist_data = []
 

@@ -41,6 +41,12 @@ CORRELATION_CRAMER_CAPTION = "Correlation Cramer Table"
 PEARSON = "Pearson's"
 TSCHUPROW = "Tschuprow"
 CRAMER = "Cramer"
+CAT = "cat"
+CONT = "cont"
+CAT_URL = "cat_url"
+CONT_URL = "cont_url"
+RATIO = "Ratio"
+CORRELATION_RATIO_TABLE = "Correlation Ratio Table"
 
 
 def load_dataset():
@@ -299,15 +305,14 @@ def correlation_cont_cont_table(cm, df, cont_preds, df_mor_continuous):
     cont_cont_corr_heatmap = cm.corr_heatmap_plots(
         df_corr_cont_cont_table,
         CONT_1,
-        CONTINUOUS_TYPE_PRED,
         CONT_2,
-        CONTINUOUS_TYPE_PRED,
         PEARSON,
         CORR,
     )
 
     # Writing the matrix into HTML
     with open("my_table.html", "a") as f:
+        f.write("Continuous/Continuous Correlations")
         f.write(cont_cont_corr_heatmap)
 
     # Adding the condition to remove the self correlation values from the correlation table
@@ -319,6 +324,14 @@ def correlation_cont_cont_table(cm, df, cont_preds, df_mor_continuous):
 
 
 def correlation_cat_cat_table(cm, df, cat_preds, df_mor_categorical):
+    """
+    Function to generate correlation matrix for cramer's and tschuprow's categorical correlation
+    :param cm:
+    :param df:
+    :param cat_preds:
+    :param df_mor_categorical:
+    :return:
+    """
     lst_corr_cat_cat_table_cramers_v = []
     lst_corr_cat_cat_table_tschuprow = []
     for pred_1 in cat_preds:
@@ -383,9 +396,7 @@ def correlation_cat_cat_table(cm, df, cat_preds, df_mor_categorical):
     cat_cat_corr_heatmap_cramers_v = cm.corr_heatmap_plots(
         df_corr_cat_cat_table_cramers_v,
         CAT_1,
-        CATEGORICAL_TYPE_PRED,
         CAT_2,
-        CATEGORICAL_TYPE_PRED,
         CRAMER,
         CORR,
     )
@@ -394,15 +405,14 @@ def correlation_cat_cat_table(cm, df, cat_preds, df_mor_categorical):
     cat_cat_corr_heatmap_tschuprow = cm.corr_heatmap_plots(
         df_corr_cat_cat_table_tschuprow,
         CAT_1,
-        CATEGORICAL_TYPE_PRED,
         CAT_2,
-        CATEGORICAL_TYPE_PRED,
         TSCHUPROW,
         CORR,
     )
 
     # Writing the matrix into HTML
     with open("my_table.html", "a") as f:
+        f.write("Categorical/Categorical Correlations")
         f.write(cat_cat_corr_heatmap_cramers_v)
         f.write(cat_cat_corr_heatmap_tschuprow)
 
@@ -418,41 +428,116 @@ def correlation_cat_cat_table(cm, df, cat_preds, df_mor_categorical):
     return df_corr_cat_cat_table_cramers_v, df_corr_cat_cat_table_tschuprow
 
 
-def correlation_metrics(
-    df, predictors, response, df_mor_categorical, df_mor_continuous
+def correlation_cat_cont_table(
+    cm, df, cat_preds, cont_preds, df_mor_categorical, df_mor_continuous
 ):
+    """
+    Function to generate correlation matrix for categorical vs continuous correlation
+    :param cm:
+    :param df:
+    :param cat_preds:
+    :param cont_preds:
+    :param df_mor_categorical:
+    :param df_mor_continuous:
+    :return:
+    """
+    lst_corr_cat_cont_table = []
+    for cat_pred in cat_preds:
+        for cont_pred in cont_preds:
+            dict_corr_cat_cont_table = {
+                CAT: cat_pred,
+                CONT: cont_pred,
+                CORR: cm.cat_cont_correlation_ratio(df[cat_pred], df[cont_pred]),
+                CAT_URL: df_mor_categorical.loc[
+                    df_mor_categorical[PREDICTOR] == cat_pred, PLOT_LINK_MOR
+                ].values[0],
+                CONT_URL: df_mor_continuous.loc[
+                    df_mor_continuous[PREDICTOR] == cont_pred, PLOT_LINK_MOR
+                ].values[0],
+            }
+            lst_corr_cat_cont_table.append(dict_corr_cat_cont_table)
+
+    df_corr_cat_cont_table = pd.DataFrame(
+        lst_corr_cat_cont_table,
+        columns=[
+            CAT,
+            CONT,
+            CORR,
+            CAT_URL,
+            CONT_URL,
+        ],
+    )
+
+    df_corr_cat_cont_table = df_corr_cat_cont_table.sort_values(
+        by=[CORR], ascending=False
+    )
+
+    # plot the cont/cont correlation heatmap
+    cat_cont_corr_heatmap = cm.corr_heatmap_plots(
+        df_corr_cat_cont_table,
+        CAT,
+        CONT,
+        RATIO,
+        CORR,
+    )
+
+    # Writing the matrix into HTML
+    with open("my_table.html", "a") as f:
+        f.write("Categorical/Continuous Correlations")
+        f.write(cat_cont_corr_heatmap)
+
+    return df_corr_cat_cont_table
+
+
+def correlation_metrics(df, predictors, df_mor_categorical, df_mor_continuous):
     cm = CorrelationMetrics()
     cat_preds, cont_preds = return_categorical_continuous_predictor_list(df, predictors)
 
-    # Getting the correlation coefficients of cont/cont predictors
-    df_corr_cont_cont_table = correlation_cont_cont_table(
-        cm, df, cont_preds, df_mor_continuous
-    )
+    if len(cont_preds) > 0:
+        # Getting the correlation coefficients of cont/cont predictors
+        df_corr_cont_cont_table = correlation_cont_cont_table(
+            cm, df, cont_preds, df_mor_continuous
+        )
 
-    # Save the cont_cont correlation table to HTML
-    save_dataframe_to_HTML(
-        df_corr_cont_cont_table, CONT_1_URL, CONT_2_URL, CORRELATION_PEARSON_CAPTION
-    )
+        # Save the cont_cont correlation table to HTML
+        save_dataframe_to_HTML(
+            df_corr_cont_cont_table, CONT_1_URL, CONT_2_URL, CORRELATION_PEARSON_CAPTION
+        )
 
-    # Getting the correlation coefficients of cat/cat predictors
-    (
-        df_corr_cat_cat_table_cramers_v,
-        df_corr_cat_cat_table_tschuprow,
-    ) = correlation_cat_cat_table(cm, df, cat_preds, df_mor_categorical)
+    if len(cat_preds) > 0:
+        # Getting the correlation coefficients of cat/cat predictors
+        (
+            df_corr_cat_cat_table_cramers_v,
+            df_corr_cat_cat_table_tschuprow,
+        ) = correlation_cat_cat_table(cm, df, cat_preds, df_mor_categorical)
 
-    # Save the cont_cont correlation table to HTML
-    save_dataframe_to_HTML(
-        df_corr_cat_cat_table_cramers_v,
-        CAT_1_URL,
-        CAT_2_URL,
-        CORRELATION_CRAMER_CAPTION,
-    )
-    save_dataframe_to_HTML(
-        df_corr_cat_cat_table_tschuprow,
-        CAT_1_URL,
-        CAT_2_URL,
-        CORRELATION_TSCHUPROW_CAPTION,
-    )
+        # Save the cont_cont correlation table to HTML
+        save_dataframe_to_HTML(
+            df_corr_cat_cat_table_cramers_v,
+            CAT_1_URL,
+            CAT_2_URL,
+            CORRELATION_CRAMER_CAPTION,
+        )
+        save_dataframe_to_HTML(
+            df_corr_cat_cat_table_tschuprow,
+            CAT_1_URL,
+            CAT_2_URL,
+            CORRELATION_TSCHUPROW_CAPTION,
+        )
+
+    if len(cat_preds) > 0 and len(cont_preds) > 0:
+        # Getting the correlation coefficients of cat/cont predictors
+        df_corr_cat_cont_table = correlation_cat_cont_table(
+            cm, df, cat_preds, cont_preds, df_mor_categorical, df_mor_continuous
+        )
+
+        # Save the cat/cont correlation into HTML table
+        save_dataframe_to_HTML(
+            df_corr_cat_cont_table,
+            CAT_URL,
+            CONT_URL,
+            CORRELATION_RATIO_TABLE,
+        )
 
     return
 
@@ -555,7 +640,7 @@ def resp_vs_pred_plots(df, predictors, response, path):
     for predictor in categorical_predictors_list:
         if response_type == CONTINUOUS_TYPE_RESP:
             lst_resp_vs_pred_plots_categorical.append(
-                predictor_vs_response_plots.cont_resp_cat_predictor(
+                predictor_vs_response_plots.cont_response_cat_predictor(
                     df, predictor, response, path
                 )
             )
@@ -570,14 +655,14 @@ def resp_vs_pred_plots(df, predictors, response, path):
     for predictor in continuous_predictors_list:
         if response_type == CONTINUOUS_TYPE_RESP:
             lst_resp_vs_pred_plots_continuous.append(
-                predictor_vs_response_plots.cat_resp_cont_predictor(
+                predictor_vs_response_plots.cont_response_cont_predictor(
                     df, predictor, response, path
                 )
             )
 
         elif response_type == BOOLEAN_TYPE_RESP:
             lst_resp_vs_pred_plots_continuous.append(
-                predictor_vs_response_plots.cat_resp_cont_predictor(
+                predictor_vs_response_plots.cat_response_cont_predictor(
                     df, predictor, response, path
                 )
             )
@@ -694,7 +779,7 @@ def process_dataframes(dataset, df, predictors, response):
         caption=CATEGORICAL_PREDICTORS_CAPTION,
     )
 
-    correlation_metrics(df, predictors, response, df_mor_categorical, df_mor_continuous)
+    correlation_metrics(df, predictors, df_mor_categorical, df_mor_continuous)
 
     return
 
