@@ -41,6 +41,7 @@ CORRELATION_PEARSON_CAPTION = "Correlation Pearson Table"
 CORRELATION_TSCHUPROW_CAPTION = "Correlation Tschuprow Table"
 CORRELATION_CRAMER_CAPTION = "Correlation Cramer Table"
 PEARSON = "Pearson's"
+ABS_PEARSON = "abs_pearson"
 TSCHUPROW = "Tschuprow"
 CRAMER = "Cramer"
 ABS_CRAMER = "abs_cramer"
@@ -604,11 +605,15 @@ def correlation_metrics(df, predictors, df_mor_categorical, df_mor_continuous):
             CORRELATION_RATIO_TABLE,
         )
 
-    return df_corr_cat_cat_table_cramers_v, df_corr_cat_cat_table_tschuprow
+    return (
+        df_corr_cat_cat_table_cramers_v,
+        df_corr_cat_cat_table_tschuprow,
+        df_corr_cont_cont_table,
+    )
 
 
 def brute_force_metrics(
-    df, predictors, response, path_brute_force_plot, df_cramer, df_tschuprow
+    df, predictors, response, path_brute_force_plot, df_cramer, df_tschuprow, df_pearson
 ):
     """
     :param df:
@@ -670,8 +675,6 @@ def brute_force_metrics(
             TSCHUPROW
         ].abs()
 
-        print(df_cat_cat_brute_force_merged)
-
         # Save the cat/cat correlation into HTML table
         save_brute_force_dataframe_to_HTML(
             df_cat_cat_brute_force_merged, LINK, CAT_CAT_BRUTE_FORCE_CAPTION
@@ -692,8 +695,8 @@ def brute_force_metrics(
         df_cont_cont_brute_force_table = pd.DataFrame(
             lst_cont_cont_bf_table,
             columns=[
-                CAT_1,
-                CAT_2,
+                CONT_1,
+                CONT_2,
                 DIFF_MEAN_RESP_RANKING,
                 DIFF_MEAN_RESP_WEIGHTED_RANKING,
                 LINK,
@@ -704,9 +707,21 @@ def brute_force_metrics(
             by=[DIFF_MEAN_RESP_WEIGHTED_RANKING], ascending=False
         )
 
+        # Merging the cont_cont brute force table with person corrlation values
+        df_cont_cont_brute_force_merged = pd.merge(
+            df_cont_cont_brute_force_table,
+            df_pearson[[CONT_1, CONT_2, CORR]],
+            on=[CONT_1, CONT_2],
+        )
+
+        # Getting the absolute values of pearson correlation
+        df_cont_cont_brute_force_merged[ABS_PEARSON] = df_cont_cont_brute_force_merged[
+            CORR
+        ].abs()
+
         # Save the cont/cont correlation into HTML table
         save_brute_force_dataframe_to_HTML(
-            df_cont_cont_brute_force_table, LINK, CONT_CONT_BRUTE_FORCE_CAPTION
+            df_cont_cont_brute_force_merged, LINK, CONT_CONT_BRUTE_FORCE_CAPTION
         )
 
     return
@@ -953,7 +968,9 @@ def process_dataframes(dataset, df, predictors, response):
     (
         df_corr_cat_cat_table_cramers_v,
         df_corr_cat_cat_table_tschuprow,
+        df_corr_cont_cont_table,
     ) = correlation_metrics(df, predictors, df_mor_categorical, df_mor_continuous)
+
     brute_force_metrics(
         df,
         predictors,
@@ -961,6 +978,7 @@ def process_dataframes(dataset, df, predictors, response):
         path_brute_force_plot,
         df_corr_cat_cat_table_cramers_v,
         df_corr_cat_cat_table_tschuprow,
+        df_corr_cont_cont_table,
     )
 
     return

@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from plotly import graph_objects as go
 
 DIFF_MEAN_RESP_RANKING = "diff_mean_resp_ranking"
@@ -9,6 +10,8 @@ MEAN_SIZE = "mean_size"
 LINK = "link"
 CAT_1 = "cat_1"
 CAT_2 = "cat_2"
+CONT_1 = "cont_1"
+CONT_2 = "cont_2"
 
 
 class BruteForceMeanOfResponse:
@@ -90,10 +93,21 @@ class BruteForceMeanOfResponse:
         self, df, cont_pred_1, cont_pred_2, response, path
     ):
         df_temp = df
+        cont_pred_1_bins = cont_pred_1 + "_bins"
+        cont_pred_2_bins = cont_pred_2 + "_bins"
+
+        df_temp[cont_pred_1_bins] = (
+            pd.cut(df_temp[cont_pred_1], bins=10, right=True)
+        ).apply(lambda x: x.mid)
+        df_temp[cont_pred_2_bins] = (
+            pd.cut(df_temp[cont_pred_2], bins=10, right=True)
+        ).apply(lambda x: x.mid)
 
         df_temp = (
-            df_temp[[cont_pred_1, cont_pred_2, response]]
-            .groupby([cont_pred_1, cont_pred_2])
+            df_temp[
+                [cont_pred_1, cont_pred_2, cont_pred_1_bins, cont_pred_2_bins, response]
+            ]
+            .groupby([cont_pred_1_bins, cont_pred_2_bins])
             .agg(["mean", "size"])
             .reset_index()
         )
@@ -122,8 +136,8 @@ class BruteForceMeanOfResponse:
 
         # Create the heatmap trace
         heatmap = go.Heatmap(
-            x=np.array(df_temp[cont_pred_1]),
-            y=np.array(df_temp[cont_pred_2]),
+            x=np.array(df_temp[cont_pred_1_bins]),
+            y=np.array(df_temp[cont_pred_2_bins]),
             z=np.array(df_temp[response_mean]),
             text=np.array(df_temp[MEAN_SIZE]),
             colorscale="Blues",
@@ -150,10 +164,9 @@ class BruteForceMeanOfResponse:
         )
 
         summary_dict = {
-            CAT_1: cont_pred_1,
-            CAT_2: cont_pred_2,
-            DIFF_MEAN_RESP_RANKING: df_temp[BF_UNWEIGHTED].sum()
-            / (df[cont_pred_1].nunique() * df[cont_pred_2].nunique()),
+            CONT_1: cont_pred_1,
+            CONT_2: cont_pred_2,
+            DIFF_MEAN_RESP_RANKING: df_temp[BF_UNWEIGHTED].sum() / len(df_temp),
             DIFF_MEAN_RESP_WEIGHTED_RANKING: df_temp[BF_WEIGHTED].sum(),
             LINK: plot_link_brute_force,
         }
