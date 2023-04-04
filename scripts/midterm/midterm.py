@@ -3,6 +3,7 @@ import sys
 
 import pandas as pd
 import statsmodels.api
+from brute_force_mean_of_response import BruteForceMeanOfResponse
 from correlation_metrics import CorrelationMetrics
 from data_loader import TestDatasets
 from mean_of_response import MeanOfResponse
@@ -16,6 +17,7 @@ BOOLEAN_TYPE_RESP = "boolean response"
 CONTINUOUS_TYPE_RESP = "continuous response"
 PATH_RESP_PRED = "response_predictor_plots"
 PATH_MEAN_OF_RESPONSE = "mean_of_response_plots"
+PATH_BRUTE_FORCE_PLOTS = "brute_force_plots"
 PLOT_LINK_MOR = "plot_link_mor"
 PLOT_LINK = "plot_link"
 PREDICTOR = "predictor"
@@ -41,12 +43,20 @@ CORRELATION_CRAMER_CAPTION = "Correlation Cramer Table"
 PEARSON = "Pearson's"
 TSCHUPROW = "Tschuprow"
 CRAMER = "Cramer"
+ABS_CRAMER = "abs_cramer"
+ABS_TSCHUPROW = "abs_tschuprow"
 CAT = "cat"
 CONT = "cont"
 CAT_URL = "cat_url"
 CONT_URL = "cont_url"
 RATIO = "Ratio"
 CORRELATION_RATIO_TABLE = "Correlation Ratio Table"
+DIFF_MEAN_RESP_RANKING = "diff_mean_resp_ranking"
+DIFF_MEAN_RESP_WEIGHTED_RANKING = "diff_mean_resp_weighted_ranking"
+LINK = "link"
+CAT_CAT_BRUTE_FORCE_CAPTION = "Categorical/Categorical - Brute Force Table"
+CONT_CONT_BRUTE_FORCE_CAPTION = "Continuous/Continuous - Brute Force Table"
+CAT_CONT_BRUTE_FORCE_CAPTION = "Categorical/Continuous - Brute Force Table"
 
 
 def load_dataset():
@@ -105,6 +115,21 @@ def create_mean_of_response_plot_folder(dataset):
     return path
 
 
+def create_brute_force_plot_folder(dataset):
+    """
+    Function to create a folder for brute force plots
+    :param dataset:
+    :return:
+    """
+    path = f"{PATH_BRUTE_FORCE_PLOTS}"
+    if not os.path.exists(path):
+        os.mkdir(path)
+    path = f"{path}/{dataset}"
+    if not os.path.exists(path):
+        os.mkdir(path)
+    return path
+
+
 # Define function to format local plot image as clickable link
 def make_clickable(path):
     """
@@ -118,8 +143,10 @@ def make_clickable(path):
 
 def save_dataframe_to_HTML(df, plot_link_mor, plot_link, caption):
     """
-    Function to convert dataframe into HTML
+    Function to convert dataframe with 2 links into HTML
     :param df:
+    :param plot_link_mor:
+    :param plot_link:
     :param caption:
     :return:
     """
@@ -136,6 +163,36 @@ def save_dataframe_to_HTML(df, plot_link_mor, plot_link, caption):
         df.style.format(
             {f"{plot_link_mor}": make_clickable, f"{plot_link}": make_clickable}
         )
+        .set_table_styles(styles)
+        .set_caption(caption)
+    )
+
+    # Generate an HTML table from the styled DataFrame
+    html_table = styled_table.to_html()
+
+    with open("my_table.html", "a") as f:
+        f.write(html_table)
+
+
+def save_brute_force_dataframe_to_HTML(df, link, caption):
+    """
+    Function to convert dataframe with 1 link into HTML
+    :param df:
+    :param link:
+    :param caption:
+    :return:
+    """
+    # Apply styles to the DataFrame using the Styler class
+    styles = [
+        {"selector": "table", "props": [("border-collapse", "collapse")]},
+        {
+            "selector": "th, td",
+            "props": [("padding", "8px"), ("border", "1px solid black")],
+        },
+        {"selector": "th", "props": [("background-color", "#f2f2f2")]},
+    ]
+    styled_table = (
+        df.style.format({f"{link}": make_clickable})
         .set_table_styles(styles)
         .set_caption(caption)
     )
@@ -490,6 +547,14 @@ def correlation_cat_cont_table(
 
 
 def correlation_metrics(df, predictors, df_mor_categorical, df_mor_continuous):
+    """
+    Function to generate correlation matrix for categorical and continuous predictors
+    :param df:
+    :param predictors:
+    :param df_mor_categorical:
+    :param df_mor_continuous:
+    :return:
+    """
     cm = CorrelationMetrics()
     cat_preds, cont_preds = return_categorical_continuous_predictor_list(df, predictors)
 
@@ -537,6 +602,111 @@ def correlation_metrics(df, predictors, df_mor_categorical, df_mor_continuous):
             CAT_URL,
             CONT_URL,
             CORRELATION_RATIO_TABLE,
+        )
+
+    return df_corr_cat_cat_table_cramers_v, df_corr_cat_cat_table_tschuprow
+
+
+def brute_force_metrics(
+    df, predictors, response, path_brute_force_plot, df_cramer, df_tschuprow
+):
+    """
+    :param df:
+    :param predictors:
+    :param response:
+    :param path_brute_force_plot:
+    :return:
+    """
+    bf_mor = BruteForceMeanOfResponse()
+    cat_preds, cont_preds = return_categorical_continuous_predictor_list(df, predictors)
+
+    # For cat_cat brute force combination
+    if len(cat_preds) > 1:
+        lst_cat_cat_bf_table = []
+        for pred_1 in cat_preds:
+            for pred_2 in cat_preds:
+                if pred_1 != pred_2:
+                    lst_cat_cat_bf_table.append(
+                        bf_mor.brute_force_cat_cat_mean_of_response(
+                            df, pred_1, pred_2, response, path_brute_force_plot
+                        )
+                    )
+
+        df_cat_cat_brute_force_table = pd.DataFrame(
+            lst_cat_cat_bf_table,
+            columns=[
+                CAT_1,
+                CAT_2,
+                DIFF_MEAN_RESP_RANKING,
+                DIFF_MEAN_RESP_WEIGHTED_RANKING,
+                LINK,
+            ],
+        )
+
+        df_cat_cat_brute_force_table = df_cat_cat_brute_force_table.sort_values(
+            by=[DIFF_MEAN_RESP_WEIGHTED_RANKING], ascending=False
+        )
+
+        # Merging the Brute Force Dataframes with Correlation Matrix
+        df_cat_cat_brute_force_merged = pd.merge(
+            pd.merge(
+                df_cat_cat_brute_force_table,
+                df_cramer[[CAT_1, CAT_2, CORR]],
+                on=[CAT_1, CAT_2],
+            ),
+            df_tschuprow[[CAT_1, CAT_2, CORR]],
+            on=[CAT_1, CAT_2],
+        )
+
+        df_cat_cat_brute_force_merged = df_cat_cat_brute_force_merged.rename(
+            columns={f"{CORR}_x": CRAMER, f"{CORR}_y": TSCHUPROW}
+        )
+
+        # Getting the absolute values of cramer and tschuprow correlation
+        df_cat_cat_brute_force_merged[ABS_CRAMER] = df_cat_cat_brute_force_merged[
+            CRAMER
+        ].abs()
+        df_cat_cat_brute_force_merged[ABS_TSCHUPROW] = df_cat_cat_brute_force_merged[
+            TSCHUPROW
+        ].abs()
+
+        print(df_cat_cat_brute_force_merged)
+
+        # Save the cat/cat correlation into HTML table
+        save_brute_force_dataframe_to_HTML(
+            df_cat_cat_brute_force_merged, LINK, CAT_CAT_BRUTE_FORCE_CAPTION
+        )
+
+    #  For cont_cont brute force combination
+    if len(cont_preds) > 1:
+        lst_cont_cont_bf_table = []
+        for pred_1 in cont_preds:
+            for pred_2 in cont_preds:
+                if pred_1 != pred_2:
+                    lst_cont_cont_bf_table.append(
+                        bf_mor.brute_force_cont_cont_mean_of_response(
+                            df, pred_1, pred_2, response, path_brute_force_plot
+                        )
+                    )
+
+        df_cont_cont_brute_force_table = pd.DataFrame(
+            lst_cont_cont_bf_table,
+            columns=[
+                CAT_1,
+                CAT_2,
+                DIFF_MEAN_RESP_RANKING,
+                DIFF_MEAN_RESP_WEIGHTED_RANKING,
+                LINK,
+            ],
+        )
+
+        df_cont_cont_brute_force_table = df_cont_cont_brute_force_table.sort_values(
+            by=[DIFF_MEAN_RESP_WEIGHTED_RANKING], ascending=False
+        )
+
+        # Save the cont/cont correlation into HTML table
+        save_brute_force_dataframe_to_HTML(
+            df_cont_cont_brute_force_table, LINK, CONT_CONT_BRUTE_FORCE_CAPTION
         )
 
     return
@@ -710,6 +880,7 @@ def process_dataframes(dataset, df, predictors, response):
     # Getting the path of mean of response plots and predictor vs response plots
     path_mean_of_response_plot = create_mean_of_response_plot_folder(dataset)
     path_predictor_vs_response_plot = create_resp_pred_plot_folder(dataset)
+    path_brute_force_plot = create_brute_force_plot_folder(dataset)
 
     # Get the list of categorical and continuous predictors
     (
@@ -779,7 +950,18 @@ def process_dataframes(dataset, df, predictors, response):
         caption=CATEGORICAL_PREDICTORS_CAPTION,
     )
 
-    correlation_metrics(df, predictors, df_mor_categorical, df_mor_continuous)
+    (
+        df_corr_cat_cat_table_cramers_v,
+        df_corr_cat_cat_table_tschuprow,
+    ) = correlation_metrics(df, predictors, df_mor_categorical, df_mor_continuous)
+    brute_force_metrics(
+        df,
+        predictors,
+        response,
+        path_brute_force_plot,
+        df_corr_cat_cat_table_cramers_v,
+        df_corr_cat_cat_table_tschuprow,
+    )
 
     return
 
@@ -787,6 +969,7 @@ def process_dataframes(dataset, df, predictors, response):
 def main():
     dataset, df, predictors, response = load_dataset()
     process_dataframes(dataset, df, predictors, response)
+
     return
 
 
