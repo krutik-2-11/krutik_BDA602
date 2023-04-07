@@ -1,3 +1,4 @@
+import globals as gb
 import numpy as np
 from plotly import express as px
 from plotly import figure_factory as ff
@@ -50,7 +51,7 @@ class PredictorVsResponsePlots:
             include_plotlyjs="cdn",
         )
 
-        summary_dict = {"predictor": predictor, "plot_link": plot_link}
+        summary_dict = {gb.PREDICTOR: predictor, gb.PLOT_LINK: plot_link}
         return summary_dict
 
     def cat_response_cont_predictor(self, df, predictor, response, path):
@@ -98,7 +99,7 @@ class PredictorVsResponsePlots:
             include_plotlyjs="cdn",
         )
 
-        summary_dict = {"predictor": predictor, "plot_link": plot_link}
+        summary_dict = {gb.PREDICTOR: predictor, gb.PLOT_LINK: plot_link}
         return summary_dict
 
     def cat_response_cat_predictor(self, df, predictor, response, path):
@@ -132,7 +133,7 @@ class PredictorVsResponsePlots:
             include_plotlyjs="cdn",
         )
 
-        summary_dict = {"predictor": predictor, "plot_link": plot_link}
+        summary_dict = {gb.PREDICTOR: predictor, gb.PLOT_LINK: plot_link}
         return summary_dict
 
     def cont_response_cont_predictor(self, df, predictor, response, path):
@@ -153,5 +154,5 @@ class PredictorVsResponsePlots:
             include_plotlyjs="cdn",
         )
 
-        summary_dict = {"predictor": predictor, "plot_link": plot_link}
+        summary_dict = {gb.PREDICTOR: predictor, gb.PLOT_LINK: plot_link}
         return summary_dict

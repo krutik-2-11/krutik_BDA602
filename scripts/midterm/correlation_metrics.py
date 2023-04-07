@@ -16,6 +16,13 @@ class CorrelationMetrics:
             return np.array([value if value is not None else 0 for value in data])
 
     def cont_cont_correlation(self, x, y):
+        """
+        SOURCES: https://www.geeksforgeeks.org/python-pearson-correlation-test-between-two-variables/
+        Function to find pearson's correlation between cont/cont predictors
+        :param x: continuous predictor values
+        :param y: continuous predictor values
+        :return: pearson's correlation value
+        """
         corr, _ = pearsonr(x, y)
         return corr
 
@@ -104,7 +111,7 @@ class CorrelationMetrics:
         1.) https://towardsdatascience.com/the-search-for-categorical-correlation-a1cf7f1888c9
         :param categories: Numpy array of categories
         :param values: Numpy array of values
-        :return: correlation
+        :return: correlation ratio
         """
         f_cat, _ = pd.factorize(categories)
         cat_num = np.max(f_cat) + 1
@@ -140,6 +147,7 @@ class CorrelationMetrics:
         layout = go.Layout(
             {
                 "title": f"Correlation {caption} Matrix",
+                "font": {"size": 25},
             }
         )
 

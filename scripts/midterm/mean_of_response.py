@@ -1,3 +1,4 @@
+import globals as gb
 import numpy as np
 import pandas as pd
 from plotly import graph_objects as go
@@ -118,10 +119,10 @@ class MeanOfResponse:
         )
 
         summary_dict = {
-            "predictor": predictor,
-            "mean_squared_diff": mean_squared_diff,
-            "weighted_mean_squared_diff": weighted_mean_squared_diff,
-            "plot_link_mor": plot_link_mor,
+            gb.PREDICTOR: predictor,
+            gb.MEAN_SQUARED_DIFF: mean_squared_diff,
+            gb.WEIGHTED_MEAN_SQUARED_DIFF: weighted_mean_squared_diff,
+            gb.PLOT_LINK_MOR: plot_link_mor,
         }
 
         return summary_dict
@@ -237,10 +238,10 @@ class MeanOfResponse:
         )
 
         summary_dict = {
-            "predictor": predictor,
-            "mean_squared_diff": mean_squared_diff,
-            "weighted_mean_squared_diff": weighted_mean_squared_diff,
-            "plot_link_mor": plot_link_mor,
+            gb.PREDICTOR: predictor,
+            gb.MEAN_SQUARED_DIFF: mean_squared_diff,
+            gb.WEIGHTED_MEAN_SQUARED_DIFF: weighted_mean_squared_diff,
+            gb.PLOT_LINK_MOR: plot_link_mor,
         }
 
         return summary_dict
@@ -334,10 +335,10 @@ class MeanOfResponse:
         )
 
         summary_dict = {
-            "predictor": predictor,
-            "mean_squared_diff": mean_squared_diff,
-            "weighted_mean_squared_diff": weighted_mean_squared_diff,
-            "plot_link_mor": plot_link_mor,
+            gb.PREDICTOR: predictor,
+            gb.MEAN_SQUARED_DIFF: mean_squared_diff,
+            gb.WEIGHTED_MEAN_SQUARED_DIFF: weighted_mean_squared_diff,
+            gb.PLOT_LINK_MOR: plot_link_mor,
         }
 
         return summary_dict
@@ -433,10 +434,10 @@ class MeanOfResponse:
         )
 
         summary_dict = {
-            "predictor": predictor,
-            "mean_squared_diff": mean_squared_diff,
-            "weighted_mean_squared_diff": weighted_mean_squared_diff,
-            "plot_link_mor": plot_link_mor,
+            gb.PREDICTOR: predictor,
+            gb.MEAN_SQUARED_DIFF: mean_squared_diff,
+            gb.WEIGHTED_MEAN_SQUARED_DIFF: weighted_mean_squared_diff,
+            gb.PLOT_LINK_MOR: plot_link_mor,
         }
 
         return summary_dict

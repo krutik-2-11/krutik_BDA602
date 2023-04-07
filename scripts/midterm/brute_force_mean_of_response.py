@@ -1,19 +1,7 @@
+import globals as gb
 import numpy as np
 import pandas as pd
 from plotly import graph_objects as go
-
-DIFF_MEAN_RESP_RANKING = "diff_mean_resp_ranking"
-DIFF_MEAN_RESP_WEIGHTED_RANKING = "diff_mean_resp_weighted_ranking"
-BF_UNWEIGHTED = "bf_unweighted"
-BF_WEIGHTED = "bf_weighted"
-MEAN_SIZE = "mean_size"
-LINK = "link"
-CAT_1 = "cat_1"
-CAT_2 = "cat_2"
-CONT_1 = "cont_1"
-CONT_2 = "cont_2"
-CAT = "cat"
-CONT = "cont"
 
 
 class BruteForceMeanOfResponse:
@@ -34,19 +22,19 @@ class BruteForceMeanOfResponse:
         response_mean = response + "mean"
         response_size = response + "size"
 
-        df_temp[BF_UNWEIGHTED] = (
+        df_temp[gb.BF_UNWEIGHTED] = (
             df_temp[response_mean]
             .to_frame()
             .apply(lambda x: (df[response].mean() - x) ** 2)
         )
 
-        df_temp[BF_WEIGHTED] = df_temp.apply(
+        df_temp[gb.BF_WEIGHTED] = df_temp.apply(
             lambda x: (x[response_size] / df_temp[response_size].sum())
-            * x[BF_UNWEIGHTED],
+            * x[gb.BF_UNWEIGHTED],
             axis=1,
         )
 
-        df_temp[MEAN_SIZE] = df_temp.apply(
+        df_temp[gb.MEAN_SIZE] = df_temp.apply(
             lambda x: "{:.3f} (pop:{})".format(x[response_mean], x[response_size]),
             axis=1,
         )
@@ -56,7 +44,7 @@ class BruteForceMeanOfResponse:
             x=np.array(df_temp[cat_pred_1]),
             y=np.array(df_temp[cat_pred_2]),
             z=np.array(df_temp[response_mean]),
-            text=np.array(df_temp[MEAN_SIZE]),
+            text=np.array(df_temp[gb.MEAN_SIZE]),
             colorscale="Blues",
             texttemplate="%{text}",
         )
@@ -81,12 +69,12 @@ class BruteForceMeanOfResponse:
         )
 
         summary_dict = {
-            CAT_1: cat_pred_1,
-            CAT_2: cat_pred_2,
-            DIFF_MEAN_RESP_RANKING: df_temp[BF_UNWEIGHTED].sum()
+            gb.CAT_1: cat_pred_1,
+            gb.CAT_2: cat_pred_2,
+            gb.DIFF_MEAN_RESP_RANKING: df_temp[gb.BF_UNWEIGHTED].sum()
             / (df[cat_pred_1].nunique() * df[cat_pred_2].nunique()),
-            DIFF_MEAN_RESP_WEIGHTED_RANKING: df_temp[BF_WEIGHTED].sum(),
-            LINK: plot_link_brute_force,
+            gb.DIFF_MEAN_RESP_WEIGHTED_RANKING: df_temp[gb.BF_WEIGHTED].sum(),
+            gb.LINK: plot_link_brute_force,
         }
 
         return summary_dict
@@ -119,19 +107,19 @@ class BruteForceMeanOfResponse:
         response_mean = response + "mean"
         response_size = response + "size"
 
-        df_temp[BF_UNWEIGHTED] = (
+        df_temp[gb.BF_UNWEIGHTED] = (
             df_temp[response_mean]
             .to_frame()
             .apply(lambda x: (df[response].mean() - x) ** 2)
         )
 
-        df_temp[BF_WEIGHTED] = df_temp.apply(
+        df_temp[gb.BF_WEIGHTED] = df_temp.apply(
             lambda x: (x[response_size] / df_temp[response_size].sum())
-            * x[BF_UNWEIGHTED],
+            * x[gb.BF_UNWEIGHTED],
             axis=1,
         )
 
-        df_temp[MEAN_SIZE] = df_temp.apply(
+        df_temp[gb.MEAN_SIZE] = df_temp.apply(
             lambda x: "{:.3f} (pop:{})".format(x[response_mean], x[response_size]),
             axis=1,
         )
@@ -141,7 +129,7 @@ class BruteForceMeanOfResponse:
             x=np.array(df_temp[cont_pred_1_bins]),
             y=np.array(df_temp[cont_pred_2_bins]),
             z=np.array(df_temp[response_mean]),
-            text=np.array(df_temp[MEAN_SIZE]),
+            text=np.array(df_temp[gb.MEAN_SIZE]),
             colorscale="Blues",
             texttemplate="%{text}",
         )
@@ -166,11 +154,11 @@ class BruteForceMeanOfResponse:
         )
 
         summary_dict = {
-            CONT_1: cont_pred_1,
-            CONT_2: cont_pred_2,
-            DIFF_MEAN_RESP_RANKING: df_temp[BF_UNWEIGHTED].sum() / len(df_temp),
-            DIFF_MEAN_RESP_WEIGHTED_RANKING: df_temp[BF_WEIGHTED].sum(),
-            LINK: plot_link_brute_force,
+            gb.CONT_1: cont_pred_1,
+            gb.CONT_2: cont_pred_2,
+            gb.DIFF_MEAN_RESP_RANKING: df_temp[gb.BF_UNWEIGHTED].sum() / len(df_temp),
+            gb.DIFF_MEAN_RESP_WEIGHTED_RANKING: df_temp[gb.BF_WEIGHTED].sum(),
+            gb.LINK: plot_link_brute_force,
         }
 
         return summary_dict
@@ -197,19 +185,19 @@ class BruteForceMeanOfResponse:
         response_mean = response + "mean"
         response_size = response + "size"
 
-        df_temp[BF_UNWEIGHTED] = (
+        df_temp[gb.BF_UNWEIGHTED] = (
             df_temp[response_mean]
             .to_frame()
             .apply(lambda x: (df[response].mean() - x) ** 2)
         )
 
-        df_temp[BF_WEIGHTED] = df_temp.apply(
+        df_temp[gb.BF_WEIGHTED] = df_temp.apply(
             lambda x: (x[response_size] / df_temp[response_size].sum())
-            * x[BF_UNWEIGHTED],
+            * x[gb.BF_UNWEIGHTED],
             axis=1,
         )
 
-        df_temp[MEAN_SIZE] = df_temp.apply(
+        df_temp[gb.MEAN_SIZE] = df_temp.apply(
             lambda x: "{:.3f} (pop:{})".format(x[response_mean], x[response_size]),
             axis=1,
         )
@@ -219,7 +207,7 @@ class BruteForceMeanOfResponse:
             x=np.array(df_temp[cat_pred]),
             y=np.array(df_temp[cont_pred_bins]),
             z=np.array(df_temp[response_mean]),
-            text=np.array(df_temp[MEAN_SIZE]),
+            text=np.array(df_temp[gb.MEAN_SIZE]),
             colorscale="Blues",
             texttemplate="%{text}",
         )
@@ -244,11 +232,11 @@ class BruteForceMeanOfResponse:
         )
 
         summary_dict = {
-            CAT: cat_pred,
-            CONT: cont_pred,
-            DIFF_MEAN_RESP_RANKING: df_temp[BF_UNWEIGHTED].sum() / len(df_temp),
-            DIFF_MEAN_RESP_WEIGHTED_RANKING: df_temp[BF_WEIGHTED].sum(),
-            LINK: plot_link_brute_force,
+            gb.CAT: cat_pred,
+            gb.CONT: cont_pred,
+            gb.DIFF_MEAN_RESP_RANKING: df_temp[gb.BF_UNWEIGHTED].sum() / len(df_temp),
+            gb.DIFF_MEAN_RESP_WEIGHTED_RANKING: df_temp[gb.BF_WEIGHTED].sum(),
+            gb.LINK: plot_link_brute_force,
         }
 
         return summary_dict
