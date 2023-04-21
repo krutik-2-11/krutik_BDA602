@@ -4,9 +4,11 @@ import sys
 import globals as gb
 import pandas as pd
 import statsmodels.api
+from baseball_data_loader import BaseballDataLoader
 from brute_force_mean_of_response import BruteForceMeanOfResponse
 from correlation_metrics import CorrelationMetrics
-from data_loader import TestDatasets
+
+# from data_loader import TestDatasets
 from mean_of_response import MeanOfResponse
 from predictor_vs_response_plots import PredictorVsResponsePlots
 from sklearn.ensemble import RandomForestRegressor
@@ -17,6 +19,8 @@ def load_dataset():
     Function to load the dataset with the user prompt.
     Returns dataset name, dataframe, predictors list and response
     :return: dataset, df, predictors, response
+    """
+
     """
     test_datasets = TestDatasets()
     dataset_dict = {}
@@ -34,6 +38,9 @@ def load_dataset():
     df = dataset_dict[dataset][0]
     predictors = dataset_dict[dataset][1]
     response = dataset_dict[dataset][2]
+    """
+    baseball = BaseballDataLoader()
+    dataset, df, predictors, response = baseball.get_baseball_data()
 
     return dataset, df, predictors, response
 
@@ -1071,6 +1078,12 @@ def main():
             f"<h1 style='text-align:center; font-size:50px; font-weight:bold;'>{heading}</h1>"
         )
 
+    for i in df.columns:
+        if df[i].dtype == "O":
+            print(i)
+            print(df[i].dtype)
+            df[i] = df[i].astype(int)
+            print(df[i].dtype)
     process_dataframes(dataset, df, predictors, response)
     return
 
