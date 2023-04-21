@@ -94,7 +94,9 @@ class BaseballDataLoader:
         )
 
         df_temp["winner_home"] = df["winner_home"]
-        df_temp.dropna(inplace=True)
+        # Filling all the NaN Values in each column with their median values
+        # https://www.statology.org/pandas-fillna-with-median/
+        df_temp = df_temp.fillna(df_temp.median())
 
         return (
             self.dataset_name,

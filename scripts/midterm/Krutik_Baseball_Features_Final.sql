@@ -12,7 +12,7 @@ SELECT
 	, g.home_team_id
 	, g.away_pitcher
 	, g.away_team_id
-	, CASE WHEN  bs.winner_home_or_away = 'H' THEN '1' ELSE '0' END AS winner_home
+	, CASE WHEN  bs.winner_home_or_away = 'H' THEN 1 ELSE 0 END AS winner_home
 FROM game g
     INNER JOIN boxscore bs
         ON g.game_id = bs.game_id

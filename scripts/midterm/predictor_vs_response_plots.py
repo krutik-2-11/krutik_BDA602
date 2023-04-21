@@ -87,13 +87,13 @@ class PredictorVsResponsePlots:
                 )
             )
         fig_2.update_layout(
-            title=f"Continuous Response {response} by Categorical Predictor {predictor}",
+            title=f"Categorical Response {response} by Continuous Predictor {predictor}",
             xaxis_title="Groupings",
             yaxis_title="Response",
         )
         # fig_2.show()
 
-        plot_link = f"{path}/cont_response_{response}_cat_predictor_{predictor}_violin_plot.html"
+        plot_link = f"{path}/cat_response_{response}_cont_predictor_{predictor}_violin_plot.html"
         fig_2.write_html(
             file=plot_link,
             include_plotlyjs="cdn",

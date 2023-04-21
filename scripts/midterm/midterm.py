@@ -4,6 +4,7 @@ import sys
 import globals as gb
 import pandas as pd
 import statsmodels.api
+import statsmodels.api as sm
 from baseball_data_loader import BaseballDataLoader
 from brute_force_mean_of_response import BruteForceMeanOfResponse
 from correlation_metrics import CorrelationMetrics
@@ -11,7 +12,18 @@ from correlation_metrics import CorrelationMetrics
 # from data_loader import TestDatasets
 from mean_of_response import MeanOfResponse
 from predictor_vs_response_plots import PredictorVsResponsePlots
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+
+"""
+References:
+https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html
+"""
 
 
 def load_dataset():
@@ -39,6 +51,8 @@ def load_dataset():
     predictors = dataset_dict[dataset][1]
     response = dataset_dict[dataset][2]
     """
+
+    # Loading the baseball dataset
     baseball = BaseballDataLoader()
     dataset, df, predictors, response = baseball.get_baseball_data()
 
@@ -1068,6 +1082,43 @@ def process_dataframes(dataset, df, predictors, response):
     return
 
 
+def machine_learning_pipelines(dataset, df, predictors, response):
+    # Building the Machine Learning Models
+    print(f"Machine Learning Pipeline for {dataset} dataset")
+    X = df[predictors]
+    y = df[response]
+    print("Independent Variables")
+    print(X)
+    print("Target Variable")
+    print(y)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )  # 80% training and 20% test
+    # Creating Pipeline for transformation and model creation
+    pipeline_SVC = Pipeline([("scaler", StandardScaler()), ("svc", SVC())])
+    pipeline_LR = Pipeline([("scaler", StandardScaler()), ("lr", LogisticRegression())])
+    pipeline_KNN = Pipeline(
+        [("scaler", StandardScaler()), ("knn", KNeighborsClassifier(n_neighbors=35))]
+    )
+    pipeline_RFC = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("rfc", RandomForestClassifier(n_estimators=100)),
+        ]
+    )
+    pipelines = [pipeline_SVC, pipeline_LR, pipeline_KNN, pipeline_RFC]
+    for pipe in pipelines:
+        pipe.fit(X_train, y_train)
+    for i, model in enumerate(pipelines):
+        print("{} Test Accuracy: {}".format(pipelines[i], model.score(X_test, y_test)))
+
+    logit_model = sm.Logit(y_train, X_train)
+    result = logit_model.fit()
+
+    # Print summary of results
+    print(result.summary())
+
+
 def main():
     dataset, df, predictors, response = load_dataset()
 
@@ -1078,13 +1129,8 @@ def main():
             f"<h1 style='text-align:center; font-size:50px; font-weight:bold;'>{heading}</h1>"
         )
 
-    for i in df.columns:
-        if df[i].dtype == "O":
-            print(i)
-            print(df[i].dtype)
-            df[i] = df[i].astype(int)
-            print(df[i].dtype)
     process_dataframes(dataset, df, predictors, response)
+    machine_learning_pipelines(dataset, df, predictors, response)
     return
 
 
