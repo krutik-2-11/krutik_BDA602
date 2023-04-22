@@ -19,6 +19,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
 
 """
 References:
@@ -1100,13 +1101,22 @@ def machine_learning_pipelines(dataset, df, predictors, response):
     pipeline_KNN = Pipeline(
         [("scaler", StandardScaler()), ("knn", KNeighborsClassifier(n_neighbors=35))]
     )
+
     pipeline_RFC = Pipeline(
         [
             ("scaler", StandardScaler()),
             ("rfc", RandomForestClassifier(n_estimators=100)),
         ]
     )
-    pipelines = [pipeline_SVC, pipeline_LR, pipeline_KNN, pipeline_RFC]
+
+    pipeline_DT = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("dtc", DecisionTreeClassifier(max_depth=5)),
+        ]
+    )
+
+    pipelines = [pipeline_SVC, pipeline_LR, pipeline_KNN, pipeline_RFC, pipeline_DT]
     for pipe in pipelines:
         pipe.fit(X_train, y_train)
     for i, model in enumerate(pipelines):
@@ -1129,8 +1139,34 @@ def main():
             f"<h1 style='text-align:center; font-size:50px; font-weight:bold;'>{heading}</h1>"
         )
 
+    # Function to process all the dataframes and generate plots
     process_dataframes(dataset, df, predictors, response)
+
+    # Machine Learning Pipelines
+    print("Machine Learning results with all the created 10 features: ")
     machine_learning_pipelines(dataset, df, predictors, response)
+
+    predictors = [
+        "pitchers_strikeout_to_walk_ratio_difference",
+        "pitchers_opponent_batting_average_difference",
+        "team_on_base_percentage_difference",
+        "team_slugging_percentage_difference",
+        "team_bat_avg_difference",
+    ]
+
+    print(
+        "Machine Learning results after removing some features based on the report statistic : "
+    )
+    machine_learning_pipelines(dataset, df, predictors, response)
+
+    print(
+        """Conclusion: I used different combinations of features based on the feature importance, mean of response,
+          p_value, t_value and correlations and the accuracy score is in the range of 51% - 53% for the models
+          None of the models have significant difference in the accuracy, although SVC, Logistic Regression
+          and Decision Tree have higher accuracy. I think more features need to be added and need to understand
+          which would bring the best accuracy."""
+    )
+
     return
 
 
