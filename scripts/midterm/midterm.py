@@ -1164,7 +1164,7 @@ def main():
           p_value, t_value and correlations and the accuracy score is in the range of 51% - 53% for the models
           None of the models have significant difference in the accuracy, although SVC, Logistic Regression
           and Decision Tree have higher accuracy. I think more features need to be added and need to understand
-          which would bring the best accuracy."""
+          which would bring the best accuracy. """
     )
 
     return
