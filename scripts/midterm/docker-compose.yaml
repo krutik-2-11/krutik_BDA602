@@ -1,0 +1,20 @@
+version: "3.3"
+
+services:
+  db_container:
+    container_name: db_container
+    image: mariadb:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 1998
+    ports:
+      - 3000:3306
+
+  script:
+    container_name: script
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./output_volume:/output
+    command: ["/bin/bash", "script.sh"]

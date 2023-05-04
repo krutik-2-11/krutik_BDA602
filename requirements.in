@@ -7,4 +7,4 @@ pyspark
 seaborn
 statsmodels
 scipy
-sqlalchemy
+sqlalchemy<2.0.0
