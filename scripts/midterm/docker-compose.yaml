@@ -6,15 +6,23 @@ services:
     image: mariadb:latest
     restart: always
     environment:
+      MYSQL_DATABASE: baseball
       MYSQL_ROOT_PASSWORD: 1998
     ports:
       - 3000:3306
 
-  script:
-    container_name: script
+  script_container:
+    container_name: script_container
     build:
       context: .
       dockerfile: Dockerfile
+    links:
+      - db_container
     volumes:
-      - ./output_volume:/output
+      - ./:/app
+    depends_on:
+      - db_container
+    #    restart: always
     command: ["/bin/bash", "script.sh"]
+#    tty: true
+

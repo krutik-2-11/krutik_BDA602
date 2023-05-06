@@ -1,34 +1,33 @@
 #!/bin/bash
 
-# create the output folder in the root directory of the container
-mkdir /output
+# pause the script for 30 seconds
 
-# create the output.txt file inside the output folder
-touch /output/output.csv
+echo "Entered the main shell. Taking rest for 30 sec....."
+
+sleep 30
+
+if mariadb -u root -p1998 -h db_container -e "select * from baseball.batter_counts limit 1;"
+then
+    echo "Database baseball exists, adding my features into baseball database..."
+    mariadb -u root -p1998 -h db_container baseball < Krutik_Baseball_Features_Final.sql
+    echo "Features added to the baseball database!"
+else
+    echo "Database baseball does not exist. Creating the database baseball..."
+    mariadb -u root -p1998 -h db_container baseball < baseball.sql
+    echo "Database baseball created and loaded successfully! Adding the features..."
+    mariadb -u root -p1998 -h db_container baseball < Krutik_Baseball_Features_Final.sql
+    echo "Features added to baseball database!"
+fi
 
 
-# pause the script for 10 seconds
-sleep 10
+echo "Running the Python Script to generate final report..."
 
-echo "Entered the main shell. Creating Database..."
+python3 midterm.py
 
-# create database
-mariadb -u root -h db_container -p1998 -e "CREATE DATABASE IF NOT EXISTS baseball;"
+echo "Script run successfully! Please check the html file for final report."
 
-echo "Database baseball created!"
 
-# import SQL file into database
-mariadb -u root -h db_container -p1998 baseball < baseball.sql
 
-echo "baseball data loaded in the database!"
-
-mariadb -u root -h db_container -p1998 baseball < sample_script.sql
-
-echo "Rolling batting average query ran successfully!"
-
-mariadb -u root -h db_container -p1998 -e "select * from baseball.fl_rolling_batting_average" > /output/output.csv
-
-echo "Output file output.csv generated!"
 
 
 

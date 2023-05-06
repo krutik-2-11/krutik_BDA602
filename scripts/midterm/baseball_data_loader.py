@@ -32,9 +32,9 @@ class BaseballDataLoader:
         self.baseball_response = "winner_home"
 
     def get_baseball_data(self):
-        db_user = "admin"
+        db_user = "root"
         db_pass = "1998"  # pragma: allowlist secret
-        db_host = "localhost"
+        db_host = "db_container"
         db_database = "baseball"
         # pragma: allowlist secret
         connect_string = (

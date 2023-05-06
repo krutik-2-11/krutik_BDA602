@@ -112,8 +112,12 @@ def make_clickable(path):
     :param path: Path string
     :return: HTML link for path
     """
-    url = "file://" + os.path.abspath(path)
-    return f'<a href="{url}" target="_blank">Plot</a>'
+    if path:
+        if "," in path:
+            x = path.split(",")
+            return f'{x[0]} <a target="_blank" href="{x[1]}">Plot</a>'
+        else:
+            return f'<a target="_blank" href="{path}">Plot</a>'
 
 
 def save_dataframe_to_HTML(df, plot_link_mor, plot_link, caption):
