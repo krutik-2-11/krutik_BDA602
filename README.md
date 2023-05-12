@@ -34,3 +34,12 @@
 - Once the feature engineering is completed, different models such as logistic regression, decision trees, KNN, and support vector machines are trained and evaluated on different combination of   features.
 - The performance of the models is evaluated using metrics such as accuracy, ROC curve, precision, recall.
 - The model with best performance is then used for prediction of future games.
+
+# Baseball Dataset
+[Baseball Dataset](https://teaching.mrsharky.com/data/baseball.sql.tar.gz)
+- The baseball dataset is loaded through a `baseball.sql` file, it is a 1.2 GB file.
+- The dataset has tables for individual batting, pitching statistics and also for the team batting, pitching statistics, game summary, fielding statistics.
+- Dataset Issues
+  * The dataset does not have a metadata, so interpretation of several columns is difficult for someone who is not used to baseball game.
+  * Some columns had only value `0` like `caughtStealing2B`, `caughtStealing3B`, `caughtStealingHome` in `pitchers_counts` table.
+  * Some tables had the multiple instances of same value, for ex: in `force_out` and `Forceout` in `pitchers_counts` table.  
