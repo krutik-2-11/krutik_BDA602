@@ -24,3 +24,5 @@
 # Run Project
 - Clone the repository using `git clone https://github.com/krutik-2-11/krutik_BDA602.git`
 - Run `docker-compose build` 
+- Run `docker-compose up`
+- After docker container is finished, it will create an `html file` that contains the complete feature engineering report and model evaluation. 
