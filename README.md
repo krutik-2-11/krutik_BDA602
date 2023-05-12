@@ -48,14 +48,22 @@
 - The source of truth is a mariadb database `baseball`. The database is loaded with a [SQL script](https://teaching.mrsharky.com/data/baseball.sql.tar.gz)
 - Once the database is loaded with `baseball.sql`, I built my features using the script [Krutik_Baseball_Features_Final.sql](https://github.com/krutik-2-11/krutik_BDA602/blob/final/scripts/final/Krutik_Baseball_Features_Final.sql)
 - Some essential features that I built are:
-* [Strikeout to Walk Ratio](https://en.wikipedia.org/wiki/Strikeout-to-walk_ratio) : **K/BB**
-* [Opponents Batting Average] : **SUM(HIT)/SUM (AT BATS)**
-* [Pitcher Strikeout Rate](https://library.fangraphs.com/offense/rate-stats/) : **K/PA**
-* [Outsplayed per pitches thrown] : **SUM(Outsplayed)/SUM(Pitches Thrown)**
-* [Power Finesse Ratio](https://en.wikipedia.org/wiki/Power_finesse_ratio) : **SUM(Strikeouts + Walks)/Innings Pitched**
-* [WHIP](https://en.wikipedia.org/wiki/Walks_plus_hits_per_inning_pitched) : **SUM(Walks + Hits)/Innings Pitched**
-* [DICE](https://en.wikipedia.org/wiki/Defense-Independent_Component_ERA) : `**(13*Home Runs + 3(Walks + Hit Batters) -2*Strikeouts)/Innings Pitched**`
-* [Team Batting Average](https://en.wikipedia.org/wiki/Batting_average_(baseball)) : **SUM(Hits)/SUM(At Bats)**
-* [Team On base Percentage](https://en.wikipedia.org/wiki/On-base_percentage) : **SUM(Hits + Walks + Hit By Pitch)/SUM(At Bat + Walks + Hit by Pitch + Sacrifice Fly)**
-* []
+* [Strikeout to Walk Ratio](https://en.wikipedia.org/wiki/Strikeout-to-walk_ratio) : `K/BB`
+* [Opponents Batting Average] : `SUM(HIT)/SUM (AT BATS)`
+* [Pitcher Strikeout Rate](https://library.fangraphs.com/offense/rate-stats/) : `K/PA`
+* [Outsplayed per pitches thrown] : `SUM(Outsplayed)/SUM(Pitches Thrown)`
+* [Power Finesse Ratio](https://en.wikipedia.org/wiki/Power_finesse_ratio) : `SUM(Strikeouts + Walks)/Innings Pitched`
+* [WHIP](https://en.wikipedia.org/wiki/Walks_plus_hits_per_inning_pitched) : `SUM(Walks + Hits)/Innings Pitched`
+* [DICE](https://en.wikipedia.org/wiki/Defense-Independent_Component_ERA) : `(13*Home Runs + 3(Walks + Hit Batters) -2*Strikeouts)/Innings Pitched`
+* [Team Batting Average](https://en.wikipedia.org/wiki/Batting_average_(baseball)) : `SUM(Hits)/SUM(At Bats)`
+* [Team On base Percentage](https://en.wikipedia.org/wiki/On-base_percentage) : `SUM(Hits + Walks + Hit By Pitch)/SUM(At Bat + Walks + Hit by Pitch + Sacrifice Fly)`
+* [Team Slugging Percentage](https://en.wikipedia.org/wiki/Slugging_percentage) : `(1*(1B) + 2*(2B) + 3*(3B) + 4*(Home Runs))/At Bats`
+* [Team Gross Production Average](https://en.wikipedia.org/wiki/Gross_production_average) : `(1.8*On Base Plus Slugging + Slugging Percentage)/4`
+* [Team Walk to Strikout Ratio](https://en.wikipedia.org/wiki/Walk-to-strikeout_ratio) : `BB/K`
+
+- There are other features that I have taken into consideration from boxscore table : 
+* `Winddir` : Wind Direction
+* `Temperature` : temperature
+* `Wind Speed` : Wind Speed
+* `Overcast` : Overcast
 
