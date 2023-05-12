@@ -25,4 +25,12 @@
 - Clone the repository using `git clone https://github.com/krutik-2-11/krutik_BDA602.git`
 - Run `docker-compose build` 
 - Run `docker-compose up`
-- After docker container is finished, it will create an `html file` that contains the complete feature engineering report and model evaluation. 
+- After docker container is finished, it will create an `krutik_pathak_midterm_file.html` that contains the complete feature engineering report and model evaluation. 
+
+# Introduction
+- The purpose of the project is to predict if the home team will win a baseball game considering different factors such as starting pitcher statistics, team batting statistics and other external   conditions.
+- Different features have been buiilt based on pitcher's, batters statistics and other game conditions.
+- The features are then evaluated based on statistical measures like mean of response plots, response-predictor violin plots, correlation heatmaps, and brute force analysis.
+- Once the feature engineering is completed, different models such as logistic regression, decision trees, KNN, and support vector machines are trained and evaluated on different combination of   features.
+- The performance of the models is evaluated using metrics such as accuracy, ROC curve, precision, recall.
+- The model with best performance is then used for prediction of future games.
