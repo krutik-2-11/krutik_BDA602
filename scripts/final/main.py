@@ -1,10 +1,12 @@
+import math
 import os
 import sys
 
 import globals as gb
 import pandas as pd
+import plotly.graph_objects as go
+import plotly.io as pio
 import statsmodels.api
-import statsmodels.api as sm
 from baseball_data_loader import BaseballDataLoader
 from brute_force_mean_of_response import BruteForceMeanOfResponse
 from correlation_metrics import CorrelationMetrics
@@ -14,10 +16,10 @@ from mean_of_response import MeanOfResponse
 from predictor_vs_response_plots import PredictorVsResponsePlots
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score, roc_curve
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
@@ -1087,20 +1089,45 @@ def process_dataframes(dataset, df, predictors, response):
     return
 
 
-def machine_learning_pipelines(dataset, df, predictors, response):
-    # Building the Machine Learning Models
-    print(f"Machine Learning Pipeline for {dataset} dataset")
+def machine_learning_pipelines(dataset, df, predictors, response, heading):
+
+    # Sort DataFrame based on 'game_date' in descending order
+    df.sort_values(by="game_date", ascending=False, inplace=True)
+
+    # Split the predictors and response
     X = df[predictors]
     y = df[response]
-    print("Independent Variables")
-    print(X)
-    print("Target Variable")
-    print(y)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )  # 80% training and 20% test
+
+    # Categorical Columns
+    categorical_columns = []
+    for predictor in predictors:
+        col_type = return_predictor_type(df[predictor])
+        if col_type == gb.CATEGORICAL_TYPE_PRED:
+            categorical_columns.append(predictor)
+
+    # Creating one hot encoder for categorical columns
+    onehot_encoder = OneHotEncoder(sparse=False)
+    for column in categorical_columns:
+        encoded_columns = pd.DataFrame(onehot_encoder.fit_transform(X[[column]]))
+        X = pd.concat([X, encoded_columns], axis=1)
+        X.drop(column, axis=1, inplace=True)
+
+    # Calculate split index position
+    split_index = math.ceil(len(df) * 0.8)  # 80% for training, 20% for testing
+
+    # Building the Machine Learning Models
+    print(f"Machine Learning Pipeline for {dataset} dataset")
+
+    X.columns = X.columns.astype(str)
+    X_train = X[:split_index]
+    y_train = y[:split_index]
+    X_test = X[split_index:]
+    y_test = y[split_index:]
+
     # Creating Pipeline for transformation and model creation
-    pipeline_SVC = Pipeline([("scaler", StandardScaler()), ("svc", SVC())])
+    pipeline_SVC = Pipeline(
+        [("scaler", StandardScaler()), ("svc", SVC(probability=True))]
+    )
     pipeline_LR = Pipeline([("scaler", StandardScaler()), ("lr", LogisticRegression())])
     pipeline_KNN = Pipeline(
         [("scaler", StandardScaler()), ("knn", KNeighborsClassifier(n_neighbors=35))]
@@ -1121,19 +1148,60 @@ def machine_learning_pipelines(dataset, df, predictors, response):
     )
 
     pipelines = [pipeline_SVC, pipeline_LR, pipeline_KNN, pipeline_RFC, pipeline_DT]
+
+    # List to store ROC Curve data for each model
+    roc_data = []
+
     for pipe in pipelines:
         pipe.fit(X_train, y_train)
+
     for i, model in enumerate(pipelines):
         print("{} Test Accuracy: {}".format(pipelines[i], model.score(X_test, y_test)))
 
-    logit_model = sm.Logit(y_train, X_train)
-    result = logit_model.fit()
+        y_prob = model.predict_proba(X_test)[:, 1]
+        fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+        auc_score = roc_auc_score(y_test, y_prob)
 
-    # Print summary of results
-    print(result.summary())
+        print("{} AUC Score: {}".format(pipelines[i], auc_score))
+        roc_data.append((pipelines[i].steps[-1][0].upper(), fpr, tpr, auc_score))
+
+    # Create the Plotly figure
+    fig = go.Figure()
+
+    # Add ROC curves as traces to the figure
+    for name, fpr, tpr, auc_score in roc_data:
+        fig.add_trace(
+            go.Scatter(
+                x=fpr,
+                y=tpr,
+                mode="lines",
+                name="{} (AUC = {:.2f})".format(name, auc_score),
+            )
+        )
+
+    # Customize the plot layout
+    fig.update_layout(
+        title="Receiver Operating Characteristic (ROC) Curve",
+        xaxis_title="False Positive Rate",
+        yaxis_title="True Positive Rate",
+        legend=dict(x=0.5, y=-0.2),
+        xaxis=dict(range=[0, 1], constrain="domain"),
+        yaxis=dict(range=[0, 1], scaleanchor="x", scaleratio=1),
+        hovermode="closest",
+    )
+
+    # Add the ROC Curve into the final html
+    with open(gb.HTML_FILE, "a") as f:
+        f.write(
+            f"<h1 style='text-align:center; font-size:50px; font-weight:bold;'>{heading}</h1>"
+        )
+        f.write(pio.to_html(fig, include_plotlyjs="cdn"))
+
+    return
 
 
 def main():
+    # Loading the dataset, predictors list and response variable
     dataset, df, predictors, response = load_dataset()
 
     # Writing the name of Dataset on top of HTML File
@@ -1143,25 +1211,35 @@ def main():
             f"<h1 style='text-align:center; font-size:50px; font-weight:bold;'>{heading}</h1>"
         )
 
-    # Function to process all the dataframes and generate plots
+    # Creating a copy of original dataframe for Machine Learning Pipeline
+    df_original = df
+    df = df.drop("game_date", axis=1)
+
+    # Function to process all the dataframes and generate plots for feature engineering
     process_dataframes(dataset, df, predictors, response)
 
     # Machine Learning Pipelines
-    print("Machine Learning results with all the created 10 features: ")
-    machine_learning_pipelines(dataset, df, predictors, response)
+    print("Machine Learning results with all the features: ")
+    machine_learning_pipelines(
+        dataset, df_original, predictors, response, "ROC Curve with all features"
+    )
 
+    # Selected best features after feature Engineering
     predictors = [
         "pitchers_strikeout_to_walk_ratio_difference",
         "pitchers_opponent_batting_average_difference",
-        "team_on_base_percentage_difference",
+        "pitchers_strikeout_rate_difference",
         "team_slugging_percentage_difference",
-        "team_bat_avg_difference",
+        "team_walk_to_strikeout_ratio_difference",
+        "overcast",
     ]
 
     print(
         "Machine Learning results after removing some features based on the report statistic : "
     )
-    machine_learning_pipelines(dataset, df, predictors, response)
+    machine_learning_pipelines(
+        dataset, df_original, predictors, response, "ROC Curve with selected features"
+    )
 
     print(
         """Conclusion: I used different combinations of features based on the feature importance, mean of response,

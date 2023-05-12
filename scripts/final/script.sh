@@ -22,7 +22,7 @@ fi
 
 echo "Running the Python Script to generate final report..."
 
-python3 midterm.py
+python3 main.py
 
 echo "Script run successfully! Please check the html file for final report."
 

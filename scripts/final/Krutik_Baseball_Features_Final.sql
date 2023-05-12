@@ -7,21 +7,29 @@ DROP TABLE IF EXISTS im_game_table;
 CREATE TABLE im_game_table AS
 SELECT
 	g.game_id
-	, g.local_date
+	, DATE(g.local_date) AS game_date
 	, g.home_pitcher
 	, g.home_team_id
 	, g.away_pitcher
 	, g.away_team_id
+	, CAST(REPLACE(SUBSTRING_INDEX(bs.temp, ' ', 1), ' degrees', '') AS DECIMAL(10, 2)) AS temperature
+	, bs.overcast
+	, CASE WHEN bs.wind = 'Indoors' THEN 0
+        ELSE CAST(SUBSTRING_INDEX(bs.wind, ' ', 1) AS UNSIGNED)
+    END AS wind
+	, bs.winddir
 	, CASE WHEN  bs.winner_home_or_away = 'H' THEN 1 ELSE 0 END AS winner_home
 FROM game g
     INNER JOIN boxscore bs
         ON g.game_id = bs.game_id
 ;
 
+
 -- Creating index for quick joins on im_game_table
-CREATE INDEX idx_imgame_gameid ON im_game_table(game_id);
-CREATE INDEX idx_imgame_pitcher ON im_game_table(home_pitcher);
-CREATE INDEX idx_imgame_date ON im_game_table(local_date);
+CREATE INDEX idx_home_pitcher_game_date_im_game_table ON im_game_table(home_pitcher, game_date);
+CREATE INDEX idx_away_pitcher_game_date_im_game_table ON im_game_table(away_pitcher, game_date);
+CREATE INDEX idx_home_team_id_game_date_im_game_table ON im_game_table(home_team_id, game_date);
+CREATE INDEX idx_away_team_id_game_date_im_game_table ON im_game_table(away_team_id, game_date);
 
 
 -- Creating intermediate pitcher table
@@ -49,38 +57,35 @@ ORDER BY local_date
 ;
 
 -- Creating index for quick joins on im_pitcher_table
-CREATE INDEX idx_pitcher ON im_pitcher_table(pitcher);
-CREATE INDEX idx_date ON im_pitcher_table(local_date);
+CREATE INDEX idx_pitcher_local_date_pitcher_table ON im_pitcher_table(pitcher, local_date);
 
 
--- Creating the intermediate batter table
-DROP TABLE IF EXISTS im_batter_batting_average;
+-- Creating the intermediate team batting counts
+DROP TABLE IF EXISTS im_team_batting_counts;
 
--- Creating intermediate batting table
-CREATE TABLE im_batter_batting_average AS
+-- Creating intermediate team batting counts table
+CREATE TABLE im_team_batting_counts AS
 SELECT
-    bc.game_id AS game_id
-    , bc.team_id AS team_id
-    , bc.batter AS batter
-    , bc.atbat AS atbat
-    , bc.hit AS hit
-    , bc.Hit_By_Pitch AS Hit_By_Pitch
-    , bc.Walk AS Walk
-    , bc.Sac_Fly AS Sac_Fly
-    , bc.Single AS Single
-    , bc.`Double` AS `Double`
-    , bc.Triple AS Triple
-    , bc.Home_Run AS Home_Run
+    tbc.game_id AS game_id
+    , tbc.team_id AS team_id
+    , tbc.atbat AS atbat
+    , tbc.hit AS hit
+    , tbc.Hit_By_Pitch AS Hit_By_Pitch
+    , tbc.Walk AS Walk
+    , tbc.Sac_Fly AS Sac_Fly
+    , tbc.Single AS Single
+    , tbc.`Double` AS `Double`
+    , tbc.Triple AS Triple
+    , tbc.Home_Run AS Home_Run
+    , tbc.Strikeout AS Strikeout
     , g.local_date AS local_date
-    , g.et_date AS et_date
-FROM batter_counts bc
-    INNER JOIN game g ON bc.game_id = g.game_id
+FROM team_batting_counts tbc
+    INNER JOIN game g ON tbc.game_id = g.game_id
 ORDER BY local_date
 ;
 
--- Creating index for quick joins on im_batter_batting_average
-CREATE INDEX idx_batter ON im_batter_batting_average(batter);
-CREATE INDEX idx_date ON im_batter_batting_average(local_date);
+-- Creating index for quick joins on im_team_batting_counts
+CREATE INDEX idx_team_id_local_date_team_batting_counts ON im_team_batting_counts(team_id, local_date);
 
 
 -- Creating Pitchers Feature Table
@@ -142,9 +147,10 @@ GROUP BY ipt1.pitcher, DATE(ipt1.local_date)
 ORDER BY ipt1.pitcher, DATE(ipt1.local_date)
 ;
 
+
 -- Creating index for quick joins on fl_pitchers_feature_table
-CREATE INDEX idx_pitchers_pitcher ON fl_pitchers_feature_table(pitcher);
-CREATE INDEX idx_pitchers_game_date ON fl_pitchers_feature_table(game_date);
+CREATE INDEX idx_pitchers_game_date_fl_pitchers_feature_table ON fl_pitchers_feature_table(pitcher, game_date);
+
 
 
 -- Team Overall Batting Features
@@ -159,68 +165,63 @@ CREATE INDEX idx_pitchers_game_date ON fl_pitchers_feature_table(game_date);
 -- Feature 10: Rolling Slugging Percentage SLG of the entire team before the match
 -- https://en.wikipedia.org/wiki/Slugging_percentage
 
--- First getting for individual batters
-DROP TABLE IF EXISTS fl_batter_feature_table;
+-- Feature 11: Gross Production Average GPA
+-- https://en.wikipedia.org/wiki/Gross_production_average
+
+-- Feature 12: Team Walk to Strikeout ratio
+-- https://en.wikipedia.org/wiki/Walk-to-strikeout_ratio
+
+
+DROP TABLE IF EXISTS fl_team_batting_feature_table;
 -- Rolling Batting Average for a Specific Batter
-CREATE TABLE fl_batter_feature_table AS
+CREATE TABLE fl_team_batting_feature_table AS
 SELECT
-    ibba1.batter
-    , ibba1.game_id
-    , ibba1.team_id
-    , DATE(ibba1.local_date) AS game_date
-    , ibba1.hit
-    , ibba1.atbat
-    , ibba1.Walk
-    , ibba1.Hit_By_Pitch
-    , ibba1.Sac_Fly
-    , ibba1.Single
-    , ibba1.`Double`
-    , ibba1.Triple
-    , ibba1.Home_Run
-    , COALESCE(SUM(ibba2.hit) / NULLIF(SUM(ibba2.atbat), 0), 0) AS bat_Avg
-    , COALESCE(SUM(ibba2.hit + ibba2.Walk + ibba2.Hit_By_Pitch) / NULLIF(SUM(ibba2.atbat + ibba2.Walk + ibba2.Hit_By_Pitch + ibba2.Sac_Fly), 0), 0) AS on_base_percentage
-    , COALESCE(SUM(ibba2.Single + 2 * ibba2.`Double`  + 3 * ibba2.Triple + 4 * ibba2.Home_Run) / NULLIF(SUM(ibba2.atbat), 0), 0) AS slugging_percentage
-FROM im_batter_batting_average ibba1
-    LEFT JOIN im_batter_batting_average ibba2
+    itbc1.team_id
+    , itbc1.game_id
+    , DATE(itbc1.local_date) AS game_date
+    , itbc1.hit
+    , itbc1.atbat
+    , itbc1.Walk
+    , itbc1.Hit_By_Pitch
+    , itbc1.Sac_Fly
+    , itbc1.Single
+    , itbc1.`Double`
+    , itbc1.Triple
+    , itbc1.Home_Run
+    , COALESCE(SUM(itbc2.hit) / NULLIF(SUM(itbc2.atbat), 0), 0) AS team_bat_Avg
+    , COALESCE(SUM(itbc2.hit + itbc2.Walk + itbc2.Hit_By_Pitch) / NULLIF(SUM(itbc2.atbat + itbc2.Walk + itbc2.Hit_By_Pitch + itbc2.Sac_Fly), 0), 0) AS team_on_base_percentage
+    , COALESCE(SUM(itbc2.Single + 2 * itbc2.`Double`  + 3 * itbc2.Triple + 4 * itbc2.Home_Run) / NULLIF(SUM(itbc2.atbat), 0), 0) AS team_slugging_percentage
+    , COALESCE(SUM(itbc2.Walk) / NULLIF(SUM(itbc2.Strikeout), 0), 0) AS team_walk_to_strikeout_ratio
+FROM im_team_batting_counts itbc1
+    LEFT JOIN im_team_batting_counts itbc2
         ON
-            (((DATEDIFF(DATE(ibba1.local_date), DATE(ibba2.local_date)) <= 100) AND (DATEDIFF(DATE(ibba1.local_date)
-                , DATE(ibba2.local_date)) > 0)) AND (ibba1.batter = ibba2.batter))
+            (((DATEDIFF(DATE(itbc1.local_date), DATE(itbc2.local_date)) <= 100) AND (DATEDIFF(DATE(itbc1.local_date)
+                , DATE(itbc2.local_date)) > 0)) AND (itbc1.team_id = itbc2.team_id))
 
-GROUP BY ibba1.batter, DATE(ibba1.local_date)
-ORDER BY ibba1.batter, DATE(ibba1.local_date)
+GROUP BY itbc1.team_id, DATE(itbc1.local_date)
+ORDER BY itbc1.team_id, DATE(itbc1.local_date)
 ;
 
 
--- Getting the average stats for the entire team
-DROP TABLE IF EXISTS fl_team_batting_features;
--- Rolling Batting Average for a the entire team
-CREATE TABLE fl_team_batting_features AS
-SELECT
-    team_id
-    , game_date
-    , AVG(bat_avg) AS team_bat_Avg
-    , AVG(on_base_percentage) AS team_on_base_percentage
-    , AVG(slugging_percentage) AS team_slugging_percentage
-FROM fl_batter_feature_table
-GROUP BY team_id, game_date
-;
+
+-- Creating index for quick joins on fl_team_batting_feature_table
+CREATE INDEX idx_team_id_game_date_fl_team_batting_features ON fl_team_batting_feature_table(team_id, game_date);
 
 
--- Creating index for quick joins on fl_team_batting_features
-CREATE INDEX idx_team_batting_team_id ON fl_team_batting_features(team_id);
-CREATE INDEX idx_team_batting_game_date ON fl_team_batting_features(game_date);
-
-
--- Creating the final feature table
+-- Creating the final joined feature table
 DROP TABLE IF EXISTS fl_features_table;
 CREATE TABLE fl_features_table AS
 SELECT
 	igt.game_id AS game_id
-	, igt.local_date AS game_date
+	, igt.game_date AS game_date
 	, igt.home_pitcher AS home_pitcher
 	, igt.home_team_id AS home_team_id
 	, igt.away_pitcher AS away_pitcher
 	, igt.away_team_id AS away_team_id
+	, igt.temperature AS temperature
+	, igt.overcast AS overcast
+	, igt.wind AS wind
+	, igt.winddir AS winddir
 	, fpft_home.pitcher_strikeout_to_walk_ratio AS home_pitcher_strikeout_to_walk_ratio
 	, fpft_home.pitcher_opponent_batting_average AS home_pitcher_opponent_batting_average
 	, fpft_home.pitcher_strikeout_rate AS home_pitcher_strikeout_rate
@@ -228,9 +229,10 @@ SELECT
 	, fpft_home.pitcher_power_finesse_ratio AS home_pitcher_power_finesse_ratio
 	, fpft_home.pitcher_walks_hits_per_innings_pitched AS home_pitcher_walks_hits_per_innings_pitched
 	, fpft_home.pitcher_dice AS home_pitcher_dice
-	, ftbf_home.team_bat_Avg AS home_team_bat_Avg
-	, ftbf_home.team_on_base_percentage AS home_team_on_base_percentage
-	, ftbf_home.team_slugging_percentage AS home_team_slugging_percentage
+	, ftbft_home.team_bat_Avg AS home_team_bat_Avg
+	, ftbft_home.team_on_base_percentage AS home_team_on_base_percentage
+	, ftbft_home.team_slugging_percentage AS home_team_slugging_percentage
+	, ftbft_home.team_walk_to_strikeout_ratio AS home_team_walk_to_strikeout_ratio
 	, fpft_away.pitcher_strikeout_to_walk_ratio AS away_pitcher_strikeout_to_walk_ratio
 	, fpft_away.pitcher_opponent_batting_average AS away_pitcher_opponent_batting_average
 	, fpft_away.pitcher_strikeout_rate AS away_pitcher_strikeout_rate
@@ -238,17 +240,18 @@ SELECT
 	, fpft_away.pitcher_power_finesse_ratio AS away_pitcher_power_finesse_ratio
 	, fpft_away.pitcher_walks_hits_per_innings_pitched AS away_pitcher_walks_hits_per_innings_pitched
 	, fpft_away.pitcher_dice AS away_pitcher_dice
-	, ftbf_away.team_bat_Avg AS away_team_bat_Avg
-	, ftbf_away.team_on_base_percentage AS away_team_on_base_percentage
-	, ftbf_away.team_slugging_percentage AS away_team_slugging_percentage
+	, ftbft_away.team_bat_Avg AS away_team_bat_Avg
+	, ftbft_away.team_on_base_percentage AS away_team_on_base_percentage
+	, ftbft_away.team_slugging_percentage AS away_team_slugging_percentage
+	, ftbft_away.team_walk_to_strikeout_ratio AS away_team_walk_to_strikeout_ratio
 	, igt.winner_home AS winner_home
 FROM im_game_table igt
     LEFT JOIN fl_pitchers_feature_table fpft_home
-        ON ((igt.home_pitcher = fpft_home.pitcher) AND (DATE(igt.local_date) = fpft_home.game_date))
-	LEFT JOIN fl_team_batting_features ftbf_home
-        ON ((igt.home_team_id = ftbf_home.team_id) AND (DATE(igt.local_date) = ftbf_home.game_date))
-    LEFT JOIN fl_pitchers_feature_table fpft_away
-        ON ((igt.away_pitcher = fpft_away.pitcher) AND (DATE(igt.local_date) = fpft_away.game_date))
-    LEFT JOIN fl_team_batting_features ftbf_away
-        ON ((igt.away_team_id = ftbf_away.team_id) AND (DATE(igt.local_date) = ftbf_away.game_date))
+        ON ((igt.home_pitcher = fpft_home.pitcher) AND (igt.game_date = fpft_home.game_date))
+    LEFT JOIN fl_team_batting_feature_table ftbft_home
+        ON ((igt.home_team_id = ftbft_home.team_id) AND (igt.game_date = ftbft_home.game_date))
+	LEFT JOIN fl_pitchers_feature_table fpft_away
+        ON ((igt.away_pitcher = fpft_away.pitcher) AND (igt.game_date = fpft_away.game_date))
+	LEFT JOIN fl_team_batting_feature_table ftbft_away
+        ON ((igt.away_team_id = ftbft_away.team_id) AND (igt.game_date = ftbft_away.game_date))
 ;

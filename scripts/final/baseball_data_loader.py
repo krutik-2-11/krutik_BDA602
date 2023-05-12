@@ -27,14 +27,20 @@ class BaseballDataLoader:
             "team_bat_avg_difference",
             "team_on_base_percentage_difference",
             "team_slugging_percentage_difference",
+            "team_gross_production_average_difference",
+            "team_walk_to_strikeout_ratio_difference",
+            "temperature",
+            "overcast",
+            "wind",
+            "winddir",
         ]
 
         self.baseball_response = "winner_home"
 
     def get_baseball_data(self):
-        db_user = "root"
+        db_user = "root"  # change this to root when running in docker
         db_pass = "1998"  # pragma: allowlist secret
-        db_host = "db_container"
+        db_host = "db_container"  # change this to db_container when running in docker
         db_database = "baseball"
         # pragma: allowlist secret
         connect_string = (
@@ -48,6 +54,7 @@ class BaseballDataLoader:
             """
         df = pd.read_sql_query(query, sql_engine)
         df_temp = pd.DataFrame()
+
         df_temp["pitchers_strikeout_to_walk_ratio_difference"] = (
             df["home_pitcher_strikeout_to_walk_ratio"]
             - df["away_pitcher_strikeout_to_walk_ratio"]
@@ -93,10 +100,31 @@ class BaseballDataLoader:
             df["home_team_slugging_percentage"] - df["away_team_slugging_percentage"]
         )
 
+        df_temp["team_gross_production_average_difference"] = (
+            1.8
+            * (df["home_team_on_base_percentage"] - df["away_team_on_base_percentage"])
+            + (
+                df["home_team_slugging_percentage"]
+                - df["away_team_slugging_percentage"]
+            )
+        ) / 4
+
+        df_temp["team_walk_to_strikeout_ratio_difference"] = (
+            df["home_team_walk_to_strikeout_ratio"]
+            - df["away_team_walk_to_strikeout_ratio"]
+        )
+
+        df_temp["temperature"] = df["temperature"]
+        df_temp["overcast"] = df["overcast"]
+        df_temp["wind"] = df["wind"]
+        df_temp["winddir"] = df["winddir"]
+
         df_temp["winner_home"] = df["winner_home"]
-        # Filling all the NaN Values in each column with their median values
-        # https://www.statology.org/pandas-fillna-with-median/
-        df_temp = df_temp.fillna(df_temp.median())
+        # Filling all the NaN Values in each column with 0
+        df_temp = df_temp.fillna(0)
+
+        # Adding a column for game_date
+        df_temp["game_date"] = df["game_date"]
 
         return (
             self.dataset_name,
