@@ -54,7 +54,7 @@
 * [Outsplayed per pitches thrown] : **SUM(Outsplayed)/SUM(Pitches Thrown)**
 * [Power Finesse Ratio](https://en.wikipedia.org/wiki/Power_finesse_ratio) : **SUM(Strikeouts + Walks)/Innings Pitched**
 * [WHIP](https://en.wikipedia.org/wiki/Walks_plus_hits_per_inning_pitched) : **SUM(Walks + Hits)/Innings Pitched**
-* [DICE](https://en.wikipedia.org/wiki/Defense-Independent_Component_ERA) : **(13*Home Runs + 3(Walks + Hit Batters) -2*Strikeouts)/Innings Pitched**
+* [DICE](https://en.wikipedia.org/wiki/Defense-Independent_Component_ERA) : **(13`*`Home Runs + 3(Walks + Hit Batters) -2*Strikeouts)/Innings Pitched**
 * [Team Batting Average](https://en.wikipedia.org/wiki/Batting_average_(baseball)) : **SUM(Hits)/SUM(At Bats)**
 * [Team On base Percentage](https://en.wikipedia.org/wiki/On-base_percentage) : **SUM(Hits + Walks + Hit By Pitch)/SUM(At Bat + Walks + Hit by Pitch + Sacrifice Fly)**
 * []
