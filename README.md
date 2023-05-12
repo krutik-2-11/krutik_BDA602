@@ -20,3 +20,7 @@
 # Run `pre-commit` locally.
 
 `pre-commit run --all-files`
+
+# Run Project
+- Clone the repository using `git clone https://github.com/krutik-2-11/krutik_BDA602.git`
+- Run `docker-compose build` 
