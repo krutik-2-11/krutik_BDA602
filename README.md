@@ -45,6 +45,17 @@
   * Some tables had the multiple instances of same value, for ex: in `force_out` and `Forceout` in `pitchers_counts` table.  
 
 # Baseball Features
+- The source of truth is a mariadb database `baseball`. The database is loaded with a [SQL script](https://teaching.mrsharky.com/data/baseball.sql.tar.gz)
 - Once the database is loaded with `baseball.sql`, I built my features using the script [Krutik_Baseball_Features_Final.sql](https://github.com/krutik-2-11/krutik_BDA602/blob/final/scripts/final/Krutik_Baseball_Features_Final.sql)
-- 
+- Some essential features that I built are:
+* [Strikeout to Walk Ratio](https://en.wikipedia.org/wiki/Strikeout-to-walk_ratio) : **K/BB**
+* [Opponents Batting Average] : **SUM(HIT)/SUM (AT BATS)**
+* [Pitcher Strikeout Rate](https://library.fangraphs.com/offense/rate-stats/) : **K/PA**
+* [Outsplayed per pitches thrown] : **SUM(Outsplayed)/SUM(Pitches Thrown)**
+* [Power Finesse Ratio](https://en.wikipedia.org/wiki/Power_finesse_ratio) : **SUM(Strikeouts + Walks)/Innings Pitched**
+* [WHIP](https://en.wikipedia.org/wiki/Walks_plus_hits_per_inning_pitched) : **SUM(Walks + Hits)/Innings Pitched**
+* [DICE](https://en.wikipedia.org/wiki/Defense-Independent_Component_ERA) : **(13*Home Runs + 3(Walks + Hit Batters) -2*Strikeouts)/Innings Pitched**
+* [Team Batting Average](https://en.wikipedia.org/wiki/Batting_average_(baseball)) : **SUM(Hits)/SUM(At Bats)**
+* [Team On base Percentage](https://en.wikipedia.org/wiki/On-base_percentage) : **SUM(Hits + Walks + Hit By Pitch)/SUM(At Bat + Walks + Hit by Pitch + Sacrifice Fly)**
+* []
 
