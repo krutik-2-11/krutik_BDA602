@@ -86,4 +86,8 @@
   * [Random Forest Variable Importance](https://en.wikipedia.org/wiki/Random_forest#Variable_importance): Random forests can be used to rank the importance of variables in a regression or classification problem in a natural way. The following technique was described in Breiman's original paper[9] and is implemented in the R package randomForest. Features which produce large values for this score are ranked as more important than features which produce small values. The statistical definition of the variable importance measure was given and analyzed by Zhu et al.
 
 ## 2.2 Pearson's Correlation for Continuous/ Continuous Predictors
+- [Pearson's Correlation](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) is a bivariate correlation between two sets of data. It is a linear correlation between two sets of data. The value of correlation lies in the range (-1,1) depicting the intensity of correlation, 1 being very high positive correlation and -1 being very high negative correlation.
+- <Add the table and plot here for example from the generated HTML> 
+ 
+## 
  
