@@ -29,7 +29,6 @@ FROM game g
 WHERE bs.winner_home_or_away != ''
 ;
 
-
 -- Creating index for quick joins on im_game_table
 CREATE INDEX idx_home_pitcher_game_date_im_game_table ON im_game_table(home_pitcher, game_date);
 CREATE INDEX idx_away_pitcher_game_date_im_game_table ON im_game_table(away_pitcher, game_date);
