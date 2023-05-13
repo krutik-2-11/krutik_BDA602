@@ -67,3 +67,10 @@
   * `Wind Speed` : Wind Speed
   * `Overcast` : Overcast
 
+# Rolling 100 days average
+- I have taken rolling 100 days average as it gives a better estimate of recent performances of the players. Historic averages many times do not give the right estimate of the performance of     the player. 
+- The place where rolling 100 days average does not work very well is when a player has an amazing stats in very recent times. For ex: in last 10 days, the player has been outstading but over   the 100 days span the stats are not very enticing. 
+
+# Comparing the Home and Away sides
+- I have taken the difference between the home feature and away feature to get the final feature. For ex: **Strikeout_to_Walk_Ratio_difference** is a feature that is calculated by `Strikeout_to_Walk_Ratio_Home - Strikeout_to_Walk_Ratio_Away`
+
