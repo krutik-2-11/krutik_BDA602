@@ -18,10 +18,15 @@ SELECT
         ELSE CAST(SUBSTRING_INDEX(bs.wind, ' ', 1) AS UNSIGNED)
     END AS wind
 	, bs.winddir
-	, CASE WHEN  bs.winner_home_or_away = 'H' THEN 1 ELSE 0 END AS winner_home
+	, CASE
+		WHEN (bs.away_runs <= bs.home_runs AND bs.winner_home_or_away = 'A') OR (bs.away_runs <= bs.home_runs AND bs.winner_home_or_away = 'H') THEN 1
+		WHEN (bs.away_runs >= bs.home_runs AND bs.winner_home_or_away = 'H') OR (bs.away_runs >= bs.home_runs AND bs.winner_home_or_away = 'A') THEN 0
+	END AS winner_home
+	, g.stadium_id AS stadium_id
 FROM game g
     INNER JOIN boxscore bs
         ON g.game_id = bs.game_id
+WHERE bs.winner_home_or_away != ''
 ;
 
 
@@ -222,6 +227,7 @@ SELECT
 	, igt.overcast AS overcast
 	, igt.wind AS wind
 	, igt.winddir AS winddir
+	, igt.stadium_id AS stadium_id
 	, fpft_home.pitcher_strikeout_to_walk_ratio AS home_pitcher_strikeout_to_walk_ratio
 	, fpft_home.pitcher_opponent_batting_average AS home_pitcher_opponent_batting_average
 	, fpft_home.pitcher_strikeout_rate AS home_pitcher_strikeout_rate
