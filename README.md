@@ -44,7 +44,7 @@
   * Some columns had only value `0` like `caughtStealing2B`, `caughtStealing3B`, `caughtStealingHome` in `pitchers_counts` table.
   * Some tables had the multiple instances of same value, for ex: in `force_out` and `Forceout` in `pitchers_counts` table.  
 
-# Baseball Features
+# 1. Baseball Features
 - The source of truth is a mariadb database `baseball`. The database is loaded with a [SQL script](https://teaching.mrsharky.com/data/baseball.sql.tar.gz)
 - Once the database is loaded with `baseball.sql`, I built my features using the script [Krutik_Baseball_Features_Final.sql](https://github.com/krutik-2-11/krutik_BDA602/blob/final/scripts/final/Krutik_Baseball_Features_Final.sql)
 - Some essential features that I built are:
@@ -73,4 +73,12 @@
 
 # Comparing the Home and Away sides
 - I have taken the difference between the home feature and away feature to get the final feature. For ex: **Strikeout_to_Walk_Ratio_difference** is a feature that is calculated by `Strikeout_to_Walk_Ratio_Home - Strikeout_to_Walk_Ratio_Away`
+
+# 2. Feature Engineering
+## 2.1 Response vs Predictor Statistics
+- In this part of feature engineering, we built plots between response variable (dependent variable) and predictors (independent variables) to indentify relationship between them. I used p-     value and student t-test (t-value) estimates to identify the underlying relationship. The violin plots and scatter plots are also built to get the intuition of the relationship. Additionally   mean of response, both weighted and unweighted, and random forest variable importance is used for further analysis.
+  
+  * [p-value](https://en.wikipedia.org/wiki/P-value): The p-value tells you how likely it is to observe the data by chance alone. A small p-value (typically less than 0.05) suggests strong evidence against the null hypothesis, indicating that the observed effect is unlikely to be due to random chance.
+  * [t-value](https://www.geeksforgeeks.org/t-test/): A t-test is a type of inferential statistic used to determine if there is a significant difference between the means of two groups, which may be related in certain features.
+  * Generally a small p-value (less than 0.05) and large magnitude of t-value (>=2.00 and <= -2.00) is [considered good for confidence](https://www.allbusiness.com/barrons_dictionary/dictionary-t-value-4942040-1.html#:~:text=Generally%2C%20any%20t%2Dvalue%20greater,the%20coefficient%20as%20a%20predictor.)
 
