@@ -85,3 +85,5 @@
   * Sometimes the population distribution is not uniform in different samples, in that case we take weighted mean of response. [Weighted mean of response gives better estimate of non uniformly spread data.](https://teaching.mrsharky.com/sdsu_fall_2020_lecture07.html#/6/4)
   * [Random Forest Variable Importance](https://en.wikipedia.org/wiki/Random_forest#Variable_importance): Random forests can be used to rank the importance of variables in a regression or classification problem in a natural way. The following technique was described in Breiman's original paper[9] and is implemented in the R package randomForest. Features which produce large values for this score are ranked as more important than features which produce small values. The statistical definition of the variable importance measure was given and analyzed by Zhu et al.
 
+## 2.2 Pearson's Correlation for Continuous/ Continuous Predictors
+ 
