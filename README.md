@@ -87,7 +87,14 @@
 
 ## 2.2 Pearson's Correlation for Continuous/ Continuous Predictors
 - [Pearson's Correlation](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) is a bivariate correlation between two sets of data. It is a linear correlation between two sets of data. The value of correlation lies in the range (-1,1) depicting the intensity of correlation, 1 being very high positive correlation and -1 being very high negative correlation.
-- <Add the table and plot here for example from the generated HTML> 
+- Add the table and plot here for example from the generated HTML
  
-## 
+## 2.3 Nominal/ Nominal Correlation 
+- Used [Cramer's V](https://en.wikipedia.org/wiki/Cram%C3%A9r%27s_V) and [Tschuprow's T](https://en.wikipedia.org/wiki/Tschuprow%27s_T) correlation matrix to find the correlation between nominal predictors. 
+
+## 2.3 Correlation Ratio
+-  Used [Correlation Ratio](https://en.wikipedia.org/wiki/Correlation_ratio) for the correlation between nominal and continuous predictors. The measure is defined as the ratio of two standard deviations representing these type of variation.
+
+## 2.4 Brute Force Analysis
+- A Continuous-Continuous Predictor Pairs Brute Force analysis is used to examine the relationship between two continuous predictors in a machine learning model. Two highly correlated features have their weights or coefficients divided and effectively do not contribute much to the model. Unlike a normal correlation ratio matrix, brute force analysis has mean of response analysis that helps to identity how to features together contribute in the mean of response. If two features together do not contribute effectively we discard one of those features. 
  
