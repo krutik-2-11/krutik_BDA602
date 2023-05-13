@@ -16,7 +16,13 @@ from mean_of_response import MeanOfResponse
 from predictor_vs_response_plots import PredictorVsResponsePlots
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_auc_score, roc_curve
+from sklearn.metrics import (
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+    roc_curve,
+)
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -1116,7 +1122,9 @@ def machine_learning_pipelines(dataset, df, predictors, response, heading):
     split_index = math.ceil(len(df) * 0.8)  # 80% for training, 20% for testing
 
     # Building the Machine Learning Models
-    print(f"Machine Learning Pipeline for {dataset} dataset")
+    print(
+        f"Running Machine Learning Pipeline for {dataset} dataset with features {predictors}"
+    )
 
     X.columns = X.columns.astype(str)
     X_train = X[:split_index]
@@ -1155,15 +1163,29 @@ def machine_learning_pipelines(dataset, df, predictors, response, heading):
     for pipe in pipelines:
         pipe.fit(X_train, y_train)
 
-    for i, model in enumerate(pipelines):
-        print("{} Test Accuracy: {}".format(pipelines[i], model.score(X_test, y_test)))
+    with open(gb.HTML_FILE, "a") as f:
+        f.write(
+            f"<h1 style='text-align:center; font-size:50px; font-weight:bold;'>{heading}</h1>"
+        )
 
+    for i, model in enumerate(pipelines):
         y_prob = model.predict_proba(X_test)[:, 1]
         fpr, tpr, thresholds = roc_curve(y_test, y_prob)
         auc_score = roc_auc_score(y_test, y_prob)
-
-        print("{} AUC Score: {}".format(pipelines[i], auc_score))
         roc_data.append((pipelines[i].steps[-1][0].upper(), fpr, tpr, auc_score))
+
+        # Precision, Recall, and F1 Score
+        y_pred = model.predict(X_test)
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+        f1 = f1_score(y_test, y_pred)
+        with open(gb.HTML_FILE, "a") as f:
+            f.write(f"<h2>{pipelines[i]} Metrics</h2>")
+            f.write(f"<p>Precision: {precision}</p>")
+            f.write(f"<p>Recall: {recall}</p>")
+            f.write(f"<p>F1 Score: {f1}</p>")
+            f.write(f"<p>Accuracy: {model.score(X_test, y_test)}</p>")
+            f.write(f"<p>AUC Score: {auc_score}</p>")
 
     # Create the Plotly figure
     fig = go.Figure()
@@ -1192,9 +1214,6 @@ def machine_learning_pipelines(dataset, df, predictors, response, heading):
 
     # Add the ROC Curve into the final html
     with open(gb.HTML_FILE, "a") as f:
-        f.write(
-            f"<h1 style='text-align:center; font-size:50px; font-weight:bold;'>{heading}</h1>"
-        )
         f.write(pio.to_html(fig, include_plotlyjs="cdn"))
 
     return
@@ -1219,34 +1238,27 @@ def main():
     process_dataframes(dataset, df, predictors, response)
 
     # Machine Learning Pipelines
-    print("Machine Learning results with all the features: ")
     machine_learning_pipelines(
-        dataset, df_original, predictors, response, "ROC Curve with all features"
+        dataset, df_original, predictors, response, "Model Evaluation with all features"
     )
 
     # Selected best features after feature Engineering
-    predictors = [
+    predictors_1 = [
         "pitchers_strikeout_to_walk_ratio_difference",
         "pitchers_opponent_batting_average_difference",
         "pitchers_strikeout_rate_difference",
-        "team_slugging_percentage_difference",
+        "pitchers_dice_difference",
+        "team_gross_production_average_difference",
         "team_walk_to_strikeout_ratio_difference",
         "overcast",
     ]
 
-    print(
-        "Machine Learning results after removing some features based on the report statistic : "
-    )
     machine_learning_pipelines(
-        dataset, df_original, predictors, response, "ROC Curve with selected features"
-    )
-
-    print(
-        """Conclusion: I used different combinations of features based on the feature importance, mean of response,
-          p_value, t_value and correlations and the accuracy score is in the range of 51% - 53% for the models
-          None of the models have significant difference in the accuracy, although SVC, Logistic Regression
-          and Decision Tree have higher accuracy. I think more features need to be added and need to understand
-          which would bring the best accuracy."""
+        dataset,
+        df_original,
+        predictors_1,
+        response,
+        f"Model Evaluation with selected best features {predictors_1}",
     )
 
     return

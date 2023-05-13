@@ -17,6 +17,7 @@ class BaseballDataLoader:
     def __init__(self):
         self.dataset_name = "baseball"
         self.baseball_predictors = [
+            "stadium_id",
             "pitchers_strikeout_to_walk_ratio_difference",
             "pitchers_opponent_batting_average_difference",
             "pitchers_strikeout_rate_difference",
@@ -54,6 +55,8 @@ class BaseballDataLoader:
             """
         df = pd.read_sql_query(query, sql_engine)
         df_temp = pd.DataFrame()
+
+        df_temp["stadium_id"] = df["stadium_id"]
 
         df_temp["pitchers_strikeout_to_walk_ratio_difference"] = (
             df["home_pitcher_strikeout_to_walk_ratio"]
