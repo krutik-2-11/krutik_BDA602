@@ -24,6 +24,8 @@
 # Run Project
 
 - Clone the repository using `git clone https://github.com/krutik-2-11/krutik_BDA602.git`
+- Go to the directory `scripts/final`
+- Add the `baseball.sql` file in the directory `scripts/final`
 - Run `docker-compose build`
 - Run `docker-compose up`
 - After docker container is finished, it will create an `krutik_pathak_final_file.html` that contains the complete feature engineering report and model evaluation.
@@ -154,10 +156,14 @@
 
 # 5. Conclusion
 
-- I run 5 different models first, on all the features and then on different combination of features. I have included the ROC curves below with all the features and then with best combination of features after analyzing different combinations.
+- I run 5 different models first, on all the features and then on different combination of features. I have included the model evaluation statistics and ROC curves below with all the features and then with the best combination of features after analyzing different combinations.
+  - Model Evaluation with all the features
+    ![Model Evaluation with all the features](scripts/final/readme_images/Final_Model_Evaluation_All_Features.png)
   - ROC Curve with all the features
-  - ![ROC Curve All Features](scripts/final/readme_images/Final_ROC_All_Features.png)
+    ![ROC Curve All Features](scripts/final/readme_images/Final_ROC_All_Features.png)
+  - Model Evaluation with best features
+    ![Model Evaluation with best features](scripts/final/readme_images/Final_Model_Evaluation_Best_Features.png)
   - ROC Curve with best features combination
-  - ![ROC Curve All Features](scripts/final/readme_images/Final_ROC_Best_Features.png)
-- With all the features my best performing models are Decision Tree and Logistic Regression with AUC of 0.54
-- With my best combination of features, the best performing models are SVC, KNN, Decision Tree wth AUC 0.53
+    ![ROC Curve All Features](scripts/final/readme_images/Final_ROC_Best_Features.png)
+- With all the features my best performing models are Decision Tree and Logistic Regression with AUC of 0.54 and 0.53
+- With my best combination of features, the best performing models are SVC, KNN, Decision Tree wth AUC 0.54 and 0.53
