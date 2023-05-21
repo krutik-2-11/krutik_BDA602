@@ -1,15 +1,38 @@
+import math
 import os
 import sys
 
 import globals as gb
 import pandas as pd
+import plotly.graph_objects as go
+import plotly.io as pio
 import statsmodels.api
+from baseball_data_loader import BaseballDataLoader
 from brute_force_mean_of_response import BruteForceMeanOfResponse
 from correlation_metrics import CorrelationMetrics
-from data_loader import TestDatasets
+
+# from data_loader import TestDatasets
 from mean_of_response import MeanOfResponse
 from predictor_vs_response_plots import PredictorVsResponsePlots
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+    roc_curve,
+)
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+
+"""
+References:
+https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html
+"""
 
 
 def load_dataset():
@@ -17,6 +40,8 @@ def load_dataset():
     Function to load the dataset with the user prompt.
     Returns dataset name, dataframe, predictors list and response
     :return: dataset, df, predictors, response
+    """
+
     """
     test_datasets = TestDatasets()
     dataset_dict = {}
@@ -34,6 +59,11 @@ def load_dataset():
     df = dataset_dict[dataset][0]
     predictors = dataset_dict[dataset][1]
     response = dataset_dict[dataset][2]
+    """
+
+    # Loading the baseball dataset
+    baseball = BaseballDataLoader()
+    dataset, df, predictors, response = baseball.get_baseball_data()
 
     return dataset, df, predictors, response
 
@@ -90,8 +120,12 @@ def make_clickable(path):
     :param path: Path string
     :return: HTML link for path
     """
-    url = "file://" + os.path.abspath(path)
-    return f'<a href="{url}" target="_blank">Plot</a>'
+    if path:
+        if "," in path:
+            x = path.split(",")
+            return f'{x[0]} <a target="_blank" href="{x[1]}">Plot</a>'
+        else:
+            return f'<a target="_blank" href="{path}">Plot</a>'
 
 
 def save_dataframe_to_HTML(df, plot_link_mor, plot_link, caption):
@@ -1061,7 +1095,132 @@ def process_dataframes(dataset, df, predictors, response):
     return
 
 
+def machine_learning_pipelines(dataset, df, predictors, response, heading):
+
+    # Sort DataFrame based on 'game_date' in descending order
+    df.sort_values(by="game_date", ascending=False, inplace=True)
+
+    # Split the predictors and response
+    X = df[predictors]
+    y = df[response]
+
+    # Categorical Columns
+    categorical_columns = []
+    for predictor in predictors:
+        col_type = return_predictor_type(df[predictor])
+        if col_type == gb.CATEGORICAL_TYPE_PRED:
+            categorical_columns.append(predictor)
+
+    # Creating one hot encoder for categorical columns
+    onehot_encoder = OneHotEncoder(sparse=False)
+    for column in categorical_columns:
+        encoded_columns = pd.DataFrame(onehot_encoder.fit_transform(X[[column]]))
+        X = pd.concat([X, encoded_columns], axis=1)
+        X.drop(column, axis=1, inplace=True)
+
+    # Calculate split index position
+    split_index = math.ceil(len(df) * 0.8)  # 80% for training, 20% for testing
+
+    # Building the Machine Learning Models
+    print(
+        f"Running Machine Learning Pipeline for {dataset} dataset with features {predictors}"
+    )
+
+    X.columns = X.columns.astype(str)
+    X_train = X[:split_index]
+    y_train = y[:split_index]
+    X_test = X[split_index:]
+    y_test = y[split_index:]
+
+    # Creating Pipeline for transformation and model creation
+    pipeline_SVC = Pipeline(
+        [("scaler", StandardScaler()), ("svc", SVC(probability=True))]
+    )
+    pipeline_LR = Pipeline([("scaler", StandardScaler()), ("lr", LogisticRegression())])
+    pipeline_KNN = Pipeline(
+        [("scaler", StandardScaler()), ("knn", KNeighborsClassifier(n_neighbors=35))]
+    )
+
+    pipeline_RFC = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("rfc", RandomForestClassifier(n_estimators=100)),
+        ]
+    )
+
+    pipeline_DT = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("dtc", DecisionTreeClassifier(max_depth=5)),
+        ]
+    )
+
+    pipelines = [pipeline_SVC, pipeline_LR, pipeline_KNN, pipeline_RFC, pipeline_DT]
+
+    # List to store ROC Curve data for each model
+    roc_data = []
+
+    for pipe in pipelines:
+        pipe.fit(X_train, y_train)
+
+    with open(gb.HTML_FILE, "a") as f:
+        f.write(
+            f"<h1 style='text-align:center; font-size:50px; font-weight:bold;'>{heading}</h1>"
+        )
+
+    for i, model in enumerate(pipelines):
+        y_prob = model.predict_proba(X_test)[:, 1]
+        fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+        auc_score = roc_auc_score(y_test, y_prob)
+        roc_data.append((pipelines[i].steps[-1][0].upper(), fpr, tpr, auc_score))
+
+        # Precision, Recall, and F1 Score
+        y_pred = model.predict(X_test)
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+        f1 = f1_score(y_test, y_pred)
+        with open(gb.HTML_FILE, "a") as f:
+            f.write(f"<h2>{pipelines[i]} Metrics</h2>")
+            f.write(f"<p>Precision: {precision}</p>")
+            f.write(f"<p>Recall: {recall}</p>")
+            f.write(f"<p>F1 Score: {f1}</p>")
+            f.write(f"<p>Accuracy: {model.score(X_test, y_test)}</p>")
+            f.write(f"<p>AUC Score: {auc_score}</p>")
+
+    # Create the Plotly figure
+    fig = go.Figure()
+
+    # Add ROC curves as traces to the figure
+    for name, fpr, tpr, auc_score in roc_data:
+        fig.add_trace(
+            go.Scatter(
+                x=fpr,
+                y=tpr,
+                mode="lines",
+                name="{} (AUC = {:.2f})".format(name, auc_score),
+            )
+        )
+
+    # Customize the plot layout
+    fig.update_layout(
+        title="Receiver Operating Characteristic (ROC) Curve",
+        xaxis_title="False Positive Rate",
+        yaxis_title="True Positive Rate",
+        legend=dict(x=0.5, y=-0.2),
+        xaxis=dict(range=[0, 1], constrain="domain"),
+        yaxis=dict(range=[0, 1], scaleanchor="x", scaleratio=1),
+        hovermode="closest",
+    )
+
+    # Add the ROC Curve into the final html
+    with open(gb.HTML_FILE, "a") as f:
+        f.write(pio.to_html(fig, include_plotlyjs="cdn"))
+
+    return
+
+
 def main():
+    # Loading the dataset, predictors list and response variable
     dataset, df, predictors, response = load_dataset()
 
     # Writing the name of Dataset on top of HTML File
@@ -1071,7 +1230,37 @@ def main():
             f"<h1 style='text-align:center; font-size:50px; font-weight:bold;'>{heading}</h1>"
         )
 
+    # Creating a copy of original dataframe for Machine Learning Pipeline
+    df_original = df
+    df = df.drop("game_date", axis=1)
+
+    # Function to process all the dataframes and generate plots for feature engineering
     process_dataframes(dataset, df, predictors, response)
+
+    # Machine Learning Pipelines
+    machine_learning_pipelines(
+        dataset, df_original, predictors, response, "Model Evaluation with all features"
+    )
+
+    # Selected best features after feature Engineering
+    predictors_1 = [
+        "pitchers_strikeout_to_walk_ratio_difference",
+        "pitchers_opponent_batting_average_difference",
+        "pitchers_strikeout_rate_difference",
+        "pitchers_dice_difference",
+        "team_gross_production_average_difference",
+        "team_walk_to_strikeout_ratio_difference",
+        "overcast",
+    ]
+
+    machine_learning_pipelines(
+        dataset,
+        df_original,
+        predictors_1,
+        response,
+        f"Model Evaluation with selected best features {predictors_1}",
+    )
+
     return
 
 

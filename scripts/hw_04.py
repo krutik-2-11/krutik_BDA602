@@ -328,7 +328,7 @@ def mean_of_response_cont_pred_cat_resp(df, predictor, response, path):
     # Calculating the weighted mean squared difference
     bin_population_ratio = population / np.nansum(population)
     weighted_squared_diff = squared_diff * bin_population_ratio
-    weighted_mean_squared_diff = np.nansum(weighted_squared_diff) / bin_count
+    weighted_mean_squared_diff = np.nansum(weighted_squared_diff)
 
     # bar plot for overall population
     fig = go.Figure(
@@ -384,8 +384,10 @@ def mean_of_response_cont_pred_cat_resp(df, predictor, response, path):
 
     # Saving the plots into an HTML file with dynamic path
 
+    filename = f"{path}/{response}_VS_{predictor}_MOR.html"
+
     fig.write_html(
-        file=f"{path}/{response}_VS_{predictor}_MOR.html",
+        file=filename,
         include_plotlyjs="cdn",
     )
 
@@ -393,6 +395,7 @@ def mean_of_response_cont_pred_cat_resp(df, predictor, response, path):
     summary_dict["predictor"] = predictor
     summary_dict["mean_squared_diff"] = mean_squared_diff
     summary_dict["weighted_mean_squared_diff"] = weighted_mean_squared_diff
+    summary_dict["filename"] = filename
 
     return summary_dict
 
@@ -445,7 +448,7 @@ def mean_of_response_cat_pred_cat_resp(df, predictor, response, path):
         total_population_bins_mod
     )
     weighted_squared_diff = squared_diff * bin_population_ratio
-    weighted_mean_squared_diff = np.nansum(weighted_squared_diff) / bin_count
+    weighted_mean_squared_diff = np.nansum(weighted_squared_diff)
 
     # bar plot for overall population
     fig = go.Figure(
@@ -501,8 +504,9 @@ def mean_of_response_cat_pred_cat_resp(df, predictor, response, path):
 
     # Saving the plots into an HTML file with dynamic path
 
+    filename = f"{path}/{response}_VS_{predictor}_MOR.html"
     fig.write_html(
-        file=f"{path}/{response}_VS_{predictor}_MOR.html",
+        file=filename,
         include_plotlyjs="cdn",
     )
 
@@ -510,6 +514,7 @@ def mean_of_response_cat_pred_cat_resp(df, predictor, response, path):
     summary_dict["predictor"] = predictor
     summary_dict["mean_squared_diff"] = mean_squared_diff
     summary_dict["weighted_mean_squared_diff"] = weighted_mean_squared_diff
+    summary_dict["filename"] = filename
 
     return summary_dict
 
@@ -539,7 +544,7 @@ def mean_of_response_cont_pred_cont_resp(df, predictor, response, path):
 
     bin_population_ratio = bin_population / total_population
     weighted_squared_diff = squared_diff * bin_population_ratio
-    weighted_mean_squared_diff = np.nansum(weighted_squared_diff) / bin_count
+    weighted_mean_squared_diff = np.nansum(weighted_squared_diff)
 
     # bar plot for overall population
     fig = go.Figure(
@@ -595,8 +600,10 @@ def mean_of_response_cont_pred_cont_resp(df, predictor, response, path):
 
     # Saving the plots into an HTML file with dynamic path
 
+    filename = f"{path}/{response}_VS_{predictor}_MOR.html"
+
     fig.write_html(
-        file=f"{path}/{response}_VS_{predictor}_MOR.html",
+        file=filename,
         include_plotlyjs="cdn",
     )
 
@@ -604,6 +611,7 @@ def mean_of_response_cont_pred_cont_resp(df, predictor, response, path):
     summary_dict["predictor"] = predictor
     summary_dict["mean_squared_diff"] = mean_squared_diff
     summary_dict["weighted_mean_squared_diff"] = weighted_mean_squared_diff
+    summary_dict["filename"] = filename
 
     return summary_dict
 
@@ -635,7 +643,7 @@ def mean_of_response_cat_pred_cont_resp(df, predictor, response, path):
 
     bin_population_ratio = bin_population / total_population
     weighted_squared_diff = squared_diff * bin_population_ratio
-    weighted_mean_squared_diff = np.nansum(weighted_squared_diff) / bin_count
+    weighted_mean_squared_diff = np.nansum(weighted_squared_diff)
 
     # bar plot for overall population
     fig = go.Figure(
@@ -691,8 +699,10 @@ def mean_of_response_cat_pred_cont_resp(df, predictor, response, path):
 
     # Saving the plots into an HTML file with dynamic path
 
+    filename = f"{path}/{response}_VS_{predictor}_MOR.html"
+
     fig.write_html(
-        file=f"{path}/{response}_VS_{predictor}_MOR.html",
+        file=filename,
         include_plotlyjs="cdn",
     )
 
@@ -700,17 +710,36 @@ def mean_of_response_cat_pred_cont_resp(df, predictor, response, path):
     summary_dict["predictor"] = predictor
     summary_dict["mean_squared_diff"] = mean_squared_diff
     summary_dict["weighted_mean_squared_diff"] = weighted_mean_squared_diff
+    summary_dict["filename"] = filename
 
     return summary_dict
 
 
+# Define function to format local plot image as clickable link
+def make_clickable(path):
+    url = "file://" + os.path.abspath(path)
+    return f'<a href="{url}">Plot</a>'
+
+
 def save_dataframe_to_HTML(df, caption):
-    html_table = df.to_html()
+    # Apply styles to the DataFrame using the Styler class
+    styles = [
+        {"selector": "table", "props": [("border-collapse", "collapse")]},
+        {
+            "selector": "th, td",
+            "props": [("padding", "8px"), ("border", "1px solid black")],
+        },
+        {"selector": "th", "props": [("background-color", "#f2f2f2")]},
+    ]
+    styled_table = (
+        df.style.format({"filename": make_clickable})
+        .set_table_styles(styles)
+        .set_caption(caption)
+    )
 
-    # Manually add a table title to the HTML code
-    html_table = f"<caption><center><b>{caption}<b><center></caption>" + html_table
+    # Generate an HTML table from the styled DataFrame
+    html_table = styled_table.to_html()
 
-    # Save the HTML table string to a file
     with open("my_table.html", "a") as f:
         f.write(html_table)
 
@@ -738,17 +767,19 @@ def main():
     response_type = return_column_type(df[response], "response")
 
     lst_summary_statistics_p_t_value = []
-    lst_summary_statistics_mean_of_response = []
+    lst_summary_statistics_mean_of_response_categorical = []
+    lst_summary_statistics_mean_of_response_continuous = []
 
     continuous_predictors = []
 
     for predictor in predictors:
 
         predictor_type = return_column_type(df[predictor], "predictor")
+
         if response_type == "boolean":
             if predictor_type == "categorical":
                 cat_response_cat_predictor(df, predictor, response, path)
-                lst_summary_statistics_mean_of_response.append(
+                lst_summary_statistics_mean_of_response_categorical.append(
                     mean_of_response_cat_pred_cat_resp(
                         df, predictor, response, path_mean_of_response
                     )
@@ -760,7 +791,7 @@ def main():
                 lst_summary_statistics_p_t_value.append(
                     create_logistic_regression(df, predictor, response)
                 )
-                lst_summary_statistics_mean_of_response.append(
+                lst_summary_statistics_mean_of_response_continuous.append(
                     mean_of_response_cont_pred_cat_resp(
                         df, predictor, response, path_mean_of_response
                     )
@@ -770,7 +801,7 @@ def main():
             if predictor_type == "categorical":
                 cont_resp_cat_predictor(df, predictor, response, path)
 
-                lst_summary_statistics_mean_of_response.append(
+                lst_summary_statistics_mean_of_response_categorical.append(
                     mean_of_response_cat_pred_cont_resp(
                         df, predictor, response, path_mean_of_response
                     )
@@ -782,7 +813,7 @@ def main():
                 lst_summary_statistics_p_t_value.append(
                     create_linear_regression(df, predictor, response)
                 )
-                lst_summary_statistics_mean_of_response.append(
+                lst_summary_statistics_mean_of_response_continuous.append(
                     mean_of_response_cont_pred_cont_resp(
                         df, predictor, response, path_mean_of_response
                     )
@@ -808,23 +839,52 @@ def main():
     print(df_summary_statistics_p_t_value)
     print("*" * 50)
 
-    df_summary_statistics_mean_of_response = pd.DataFrame(
-        lst_summary_statistics_mean_of_response,
-        columns=["predictor", "weighted_mean_squared_diff", "mean_squared_diff"],
+    df_summary_statistics_mean_of_response_categorical = pd.DataFrame(
+        lst_summary_statistics_mean_of_response_categorical,
+        columns=[
+            "predictor",
+            "weighted_mean_squared_diff",
+            "mean_squared_diff",
+            "filename",
+        ],
+    )
+
+    df_summary_statistics_mean_of_response_continuous = pd.DataFrame(
+        lst_summary_statistics_mean_of_response_continuous,
+        columns=[
+            "predictor",
+            "weighted_mean_squared_diff",
+            "mean_squared_diff",
+            "filename",
+        ],
     )
 
     # Order the results in decreasing order of weighted_mean_Squared_error and mean_squared_error
-    df_summary_statistics_mean_of_response.sort_values(
+    df_summary_statistics_mean_of_response_categorical.sort_values(
+        by=["weighted_mean_squared_diff", "mean_squared_diff"],
+        ascending=[False, False],
+        inplace=True,
+    )
+
+    # Order the results in decreasing order of weighted_mean_Squared_error and mean_squared_error
+    df_summary_statistics_mean_of_response_continuous.sort_values(
         by=["weighted_mean_squared_diff", "mean_squared_diff"],
         ascending=[False, False],
         inplace=True,
     )
 
     print("*" * 50)
-    caption = f"Summary Statistics of Mean of Response of dataset {dataset}"
-    save_dataframe_to_HTML(df_summary_statistics_mean_of_response, caption)
+    caption = f"Summary Statistics of Mean of Response of categorical dataset {dataset}"
+    save_dataframe_to_HTML(df_summary_statistics_mean_of_response_categorical, caption)
     print(caption)
-    print(df_summary_statistics_mean_of_response)
+    print(df_summary_statistics_mean_of_response_categorical)
+    print("*" * 50)
+
+    print("*" * 50)
+    caption = f"Summary Statistics of Mean of Response of continuous dataset {dataset}"
+    save_dataframe_to_HTML(df_summary_statistics_mean_of_response_continuous, caption)
+    print(caption)
+    print(df_summary_statistics_mean_of_response_continuous)
     print("*" * 50)
 
     print("*" * 50)

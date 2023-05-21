@@ -1,8 +1,11 @@
+mariadb
 numpy
 plotly
-pandas
+pandas==2.0.0
 scikit-learn
 pyspark
 seaborn
 statsmodels
 scipy
+sqlalchemy>2.0.0
+jinja2
